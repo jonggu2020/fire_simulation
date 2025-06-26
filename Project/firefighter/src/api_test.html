@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>산악기상정보 API 테스트</title>
+</head>
+<body>
+
+<h1>국립산림과학원 산악기상정보 API 테스트</h1>
+<p>아래 버튼을 누르면 `mountListSearch` 엔드포인트를 호출합니다.</p>
+<button onclick="callApi()">API 호출</button>
+
+<script>
+function callApi() {
+    /* Javascript 샘플 코드 */
+
+    var xhr = new XMLHttpRequest();
+    // **** 중요 ****: 아래 URL의 '1400377' 부분이 '1400037'일 수도 있습니다.
+    // 이전에 '1400037'로 시작하는 엔드포인트도 있었습니다. 문서에서 정확한 번호를 확인해주세요.
+    // 또한 HTTP인지 HTTPS인지도 확인이 필요합니다.
+    var url = 'http://apis.data.go.kr/1400377/mtweather/mountListSearch'; /* mountListSearch URL */
+    // **** 중요 ****: 아래 '서비스키' 부분을 발급받으신 본인의 공공데이터포털 서비스키로 변경해주세요! ****
+    var serviceKey = 'q1XWOAcb5VskyP5OQGl+08hLR9MyROzs/av5AbVDjLpvMEbcl4qlFU+xSf6oxNDm2XGu0ljXk6cjUocIPX7N8Q=='; // 발급받은 서비스키
+
+    // 요청 파라미터 설정
+    // 이전에 샘플 코드에 포함되어 있던 파라미터들입니다.
+    // mountListSearch에서 이 파라미터들이 목록 필터링용인지, 아니면 불필요한 파라미터인지는 응답을 보고 판단해야 합니다.
+    // 우선 샘플 코드와 동일하게 포함하여 호출해 봅니다.
+    var queryParams = '?' + encodeURIComponent('serviceKey') + '=' + encodeURIComponent(serviceKey); /*Service Key*/
+    queryParams += '&' + encodeURIComponent('pageNo') + '=' + encodeURIComponent('1'); /**/
+    queryParams += '&' + encodeURIComponent('numOfRows') + '=' + encodeURIComponent('10'); /**/
+    queryParams += '&' + encodeURIComponent('_type') + '=' + encodeURIComponent('json'); // 응답 형식을 JSON으로 요청해 봅니다.
+    // queryParams += '&' + encodeURIComponent('localArea') + '=' + encodeURIComponent('1'); /**/ // 필요시 주석 해제
+    // queryParams += '&' + encodeURIComponent('obsid') + '=' + encodeURIComponent('1910'); /**/ // 필요시 주석 해제
+    // queryParams += '&' + encodeURIComponent('tm') + '=' + encodeURIComponent('202106301809'); /**/ // 필요시 주석 해제
+
+
+    console.log("API 호출 URL:", url + queryParams); // 호출 URL 확인
+
+    xhr.open('GET', url + queryParams);
+
+    // API 응답을 받았을 때 실행될 함수
+    xhr.onreadystatechange = function () {
+        if (this.readyState == 4) { // readyState가 4이면 응답이 모두 수신된 상태
+            console.log('Status:', this.status); // HTTP 응답 상태 코드 (예: 200 성공, 404 Not Found, 500 Server Error)
+            console.log('Headers:', this.getAllResponseHeaders()); // 응답 헤더
+            console.log('Body:', this.responseText); // 응답 본문 (XML 또는 JSON 데이터)
+
+            // 응답 상태 및 본문을 alert 창으로 보여줍니다.
+            alert('Status: ' + this.status + '\n' +
+                  'Headers: ' + this.getAllResponseHeaders() + '\n' +
+                  'Body: ' + this.responseText);
+
+             // 개발자 도구의 Console 탭에서도 위 로그들을 확인할 수 있습니다.
+        }
+    };
+
+    // 오류 발생 시 처리 (선택 사항)
+    xhr.onerror = function() {
+        console.error("API 호출 중 네트워크 오류 발생");
+        alert("API 호출 중 네트워크 오류가 발생했습니다. 개발자 도구 Console 탭을 확인하세요.");
+    };
+
+
+    xhr.send(''); // 요청 전송
+}
+</script>
+
+</body>
+</html>

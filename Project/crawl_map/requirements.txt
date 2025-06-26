@@ -1,0 +1,6 @@
+# Selenium 기반 산불 데이터 크롤러를 위한 필수 라이브러리
+# pip install -r requirements.txt
+
+selenium==4.15.0
+webdriver-manager==4.0.1
+requests==2.31.0

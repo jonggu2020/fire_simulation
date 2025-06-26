@@ -1,0 +1,33 @@
+/* App.css */
+.App {
+  text-align: center; /* 앱 내용 중앙 정렬 (선택 사항) */
+  display: flex;
+  flex-direction: column; /* 자식 요소들을 세로로 배치 */
+  height: 100vh; /* 최소 높이를 화면 전체 높이로 설정 */
+}
+
+.App-logo {
+  height: 40vmin;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .App-logo {
+    animation: App-logo-spin infinite 20s linear;
+  }
+}
+
+  /* 헤더 스타일은 App.js에서 인라인 스타일로 지정했습니다. */
+
+.App-link {
+  color: #61dafb;
+}
+
+@keyframes App-logo-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
