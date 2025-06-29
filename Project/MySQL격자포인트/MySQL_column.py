@@ -5,7 +5,7 @@ import psycopg2
 from mysql.connector import Error as MySQLError
 from psycopg2 import Error as PGError
 
-# .env 파일 로드.
+# .env 파일 로드
 load_dotenv()
 
 # PostgreSQL 연결 정보
