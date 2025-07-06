@@ -26,4 +26,21 @@ router.post('/register', async (req, res) => {
         return res.status(500).json({message: '~~~'})
     }
 });
+//
+router.post('/login', async (req, res) => {
+    // 1. 필수 입력 항목 검사
+    if (!email || !password) {
+        return res.status(400).json({ message: '이메일과 비밀번호를 모두 입력해주세요.' });
+    }
+    // 2. email 형식 검사
+    if (!validator.isEmail(email)) {
+        return res.status(400).json({ message: '유효하지 않은 이메일 형식입니다.' });
+    }
+    // 3. 유저 정보 확인
+    try {}
+    catch(e) {
+        console.error(e);
+        return res.status(500).json({message: '~~~'})
+    }
+})
 module.exports = router;
