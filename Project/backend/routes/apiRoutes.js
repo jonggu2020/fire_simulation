@@ -11,7 +11,7 @@ const {
     getGridWithFuelInfo 
 } = require('../services/simulationService');
 
-
+// Post : 
 router.post('/predict-fire-spread', async (req, res) => {
     // 요청 수신 로그를 기록합니다.
     console.log(`[${new Date().toLocaleTimeString()}] /api/predict-fire-spread: 요청 수신 (ignition_id: ${req.body.ignition_id})`);
@@ -48,7 +48,7 @@ router.get('/mapped-grid-data', async (req, res) => {
     }
 });
 
-
+// GET : 
 router.get('/grid-with-fuel-info', async (req, res) => {
     try {
         // getGridWithFuelInfo를 호출한다.

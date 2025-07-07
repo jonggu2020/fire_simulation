@@ -5,7 +5,27 @@ const admin = require('firebase-admin');
 const pool = require('../config/db');
 const validator = require('validator');
 
-// POST : /api/register
+/**
+ * @route   POST /api/register
+ * @desc    새로운 User를 등록합니다
+ * @request {
+ *    "email": "user@example.com",
+ *    "password": "yourpassword",
+ *    "name": "Your Name"
+ * }
+ * @response 201 {
+ *    "message": "회원가입이 완료되었습니다."
+ * }
+ * @response 400 {
+ *    "message": "email, password, name은 필수입력 항목입니다."
+ * }
+ * @response 400 {
+ *    "message": "유효하지 않은 이메일 형식입니다."
+ * }
+ * @response 500 {
+ *    "message": "Internal Server Error"
+ * }
+ */
 router.post('/register', async (req, res) => {
     const { email, password, name } = req.body;
     // 1. 필수 입력 항목 검사
