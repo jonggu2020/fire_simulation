@@ -5,13 +5,11 @@ import { BrowserRouter, Routes, Route, useNavigate } from 'react-router-dom';
 import './App.css'; // App 컴포넌트의 스타일 파일 (기본 생성됨)
 import logo from './assets/firefighter_logo.png';
 
-// --- 수정 전 ---
 // import VWorldMap from './VWorldMap'; // 우리가 만든 VWorldMap 컴포넌트를 불러옵니다.
 
-// --- 수정 후 ---
-// VWorldMap 컴포넌트의 새 위치를 정확히 지정합니다.
 import VWorldMap from './components/VWorldMap';
 import Home from './components/Home';
+import Login from './components/Login';
 
 function App() {
   return (
@@ -22,6 +20,9 @@ function App() {
 
         {/* 2) 지도 페이지 라우트 */}
         <Route path="/map" element={<MapPage />} />
+
+        {/* 3) 로그인 페이지 라우트 추가 */}
+        <Route path="/login" element={<Login />} />
       </Routes>
     </BrowserRouter>
   );
@@ -29,7 +30,12 @@ function App() {
 
 // 1. HomePage: 로고 좌측, 텍스트 중앙
 const HomePage = () => {
-  // const navigate = useNavigate();
+  const navigate = useNavigate(); // useNavigate 훅 사용
+
+  const handleLoginClick = () => {
+    navigate('/login'); // /login 경로로 이동
+  };
+
   return (
     <div className="App" style={{display: 'flex', flexDirection: 'column', height: '105vh', backgroundColor: '#F5F5F5',}}>
       {/* Home 전용 헤더 */}
@@ -38,21 +44,37 @@ const HomePage = () => {
           display: 'flex',
           height: '80px',
           alignItems: 'center',
-          justifyContent: 'center',  // 텍스트 가운데
-          padding: '10px 20px',
+          justifyContent: 'space-between', // 요소를 양쪽으로 분산
+          padding: '10px 30px', // 좌우 패딩 증가
           backgroundColor: '#f0f0f0',
           boxShadow: '0 1px 4px rgba(0,0,0,0.1)',
           borderBottom: '2px solid #9c9c9c',
         }}
       >
-        <img
-          src={logo}
-          alt="FireFighter Logo"
-          style={{ height: '105px', width: '115px', marginRight: '12px', position: 'absolute', left: '30px' }}
-        />
-        <h1 style={{ margin: 0, fontSize: '2.5rem', fontWeight: 'bold' }}>
-          <span style={{ color: '#B33E2C' }}>F</span>ireFighter
-        </h1>
+        <div style={{ display: 'flex', alignItems: 'center' }}>
+          <img
+            src={logo}
+            alt="FireFighter Logo"
+            style={{ height: '105px', width: '115px', marginRight: '12px' }}
+          />
+          <h1 style={{ margin: 0, fontSize: '2.5rem', fontWeight: 'bold' }}>
+            <span style={{ color: '#B33E2C' }}>F</span>ireFighter
+          </h1>
+        </div>
+        <button 
+          onClick={handleLoginClick}
+          style={{
+            padding: '10px 20px',
+            fontSize: '1rem',
+            color: 'white',
+            backgroundColor: '#B33E2C',
+            border: 'none',
+            borderRadius: '5px',
+            cursor: 'pointer'
+          }}
+        >
+          로그인
+        </button>
       </header>
 
       {/* Home 컴포넌트 */}
