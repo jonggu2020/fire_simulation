@@ -1,6 +1,14 @@
+/**
+ * src/components/SignUp.js
+ * 
+ * 회원가입 페이지 컴포넌트입니다.
+ * Firebase Authentication을 사용하여 새로운 사용자를 생성합니다.
+ */
+
 import React, { useState } from "react";
-import { getAuth, createUserWithEmailAndPassword } from "firebase/auth";
+import { createUserWithEmailAndPassword } from "firebase/auth";
 import { useNavigate } from "react-router-dom";
+import { auth } from "../firebaseConfig";
 
 function SignUp() {
     const [email, setEmail] = useState('');
@@ -11,15 +19,17 @@ function SignUp() {
 
     const handleSignUp = async (e) => {
         e.preventDefault();
-        const auth = getAuth();
         setError(null);
         setMessage('');
+
         try {
+            // import한 firebase auth를 사용
             await createUserWithEmailAndPassword(auth, email, password);
             setMessage('회원가입 성공! 로그인 페이지로 이동합니다.');
+
             setTimeout(() => {
                 navigate('/login');
-            }, 2000); // 2초 후 로그인 페이지로 이동
+            }, 2000);
         } catch (error) {
             setError(error.message);
         }
@@ -53,6 +63,8 @@ function SignUp() {
                 </div>
                 <button type="submit">회원가입</button>
             </form>
+
+            {/* 에러 또는 성공 메시지 표시 */}
             {error && <p style={{ color: 'red' }}>에러: {error}</p>}
             {message && <p style={{ color: 'green' }}>{message}</p>}
         </div>

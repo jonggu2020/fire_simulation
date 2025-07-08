@@ -1,6 +1,7 @@
 // src/firebaseConfig.js
 import { initializeApp } from 'firebase/app';
 import { getDatabase } from 'firebase/database';
+import { getAuth } from 'firebase/auth'; 
 
 const firebaseConfig = {
     apiKey: "AIzaSyCrVZaqFjeaOVikJZiEHGj__BH0sAsl904",
@@ -15,7 +16,7 @@ const firebaseConfig = {
 // Firebase 앱 초기화
 const app = initializeApp(firebaseConfig);
 
-// Firebase Realtime Database 인스턴스 가져오기
+// Firebase 서비스 인스턴스를 가지고옵니다
 const database = getDatabase(app);
-
-export { database };
+const auth = getAuth(app);
+export { auth, database };
