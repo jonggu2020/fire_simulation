@@ -1,6 +1,4 @@
 // src/App.js
-
-import React from 'react';
 import { BrowserRouter, Routes, Route, useNavigate } from 'react-router-dom';
 import './App.css'; // App 컴포넌트의 스타일 파일 (기본 생성됨)
 import logo from './assets/firefighter_logo.png';
@@ -10,7 +8,6 @@ import logo from './assets/firefighter_logo.png';
 import VWorldMap from './components/VWorldMap';
 import Home from './components/Home';
 import Login from './components/Login';
-import SignUp from './components/SignUp';
 
 function App() {
   return (
@@ -24,9 +21,6 @@ function App() {
 
         {/* 3) 로그인 페이지 라우트 추가 */}
         <Route path="/login" element={<Login />} />
-
-        {/* 4) 회원가입 페이지 라우트 추가 */}
-        <Route path="/signup" element={<SignUp />} />
       </Routes>
     </BrowserRouter>
   );
