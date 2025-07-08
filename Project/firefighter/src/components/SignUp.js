@@ -1,36 +1,34 @@
 import React, { useState } from "react";
-import { getAuth, signInWithEmailAndPassword } from "firebase/auth";
+import { getAuth, createUserWithEmailAndPassword } from "firebase/auth";
 import { useNavigate } from "react-router-dom";
 
-function Login() {
+function SignUp() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState(null);
     const [message, setMessage] = useState('');
     const navigate = useNavigate();
 
-    const handleLogin = async (e) => {
+    const handleSignUp = async (e) => {
         e.preventDefault();
         const auth = getAuth();
         setError(null);
         setMessage('');
         try {
-            await signInWithEmailAndPassword(auth, email, password);
-            setMessage('로그인 성공!');
-            // 로그인 성공 후 리디렉션 또는 다른 UI 업데이트를 여기에 추가할 수 있습니다.
+            await createUserWithEmailAndPassword(auth, email, password);
+            setMessage('회원가입 성공! 로그인 페이지로 이동합니다.');
+            setTimeout(() => {
+                navigate('/login');
+            }, 2000); // 2초 후 로그인 페이지로 이동
         } catch (error) {
             setError(error.message);
         }
     };
 
-    const handleSignUpClick = () => {
-        navigate('/signup');
-    };
-
     return (
         <div>
-            <h2>로그인</h2>
-            <form onSubmit={handleLogin}>
+            <h2>회원가입</h2>
+            <form onSubmit={handleSignUp}>
                 <div>
                     <label htmlFor="email">이메일:</label>
                     <input
@@ -47,19 +45,18 @@ function Login() {
                     <input
                         type="password"
                         id="password"
-                        placeholder="비밀번호"
+                        placeholder="비밀번호 (6자 이상)"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         required
                     />
                 </div>
-                <button type="submit">로그인</button>
+                <button type="submit">회원가입</button>
             </form>
-            <button onClick={handleSignUpClick} style={{ marginTop: '10px' }}>회원가입</button>
             {error && <p style={{ color: 'red' }}>에러: {error}</p>}
             {message && <p style={{ color: 'green' }}>{message}</p>}
         </div>
     );
 }
 
-export default Login;
+export default SignUp;
