@@ -1,18 +1,26 @@
-// firebaseAdmin.js
+// backend/firebaseAdmin.js
 const admin = require('firebase-admin');
 
-// 중요: Firebase 콘솔에서 다운로드한 '서비스 계정 키' JSON 파일의 경로를 정확하게 지정해야 합니다.
-// 이 파일은 외부에 노출되지 않도록 주의해서 관리해야 합니다.
-const serviceAccount = require('./serviceAccountKey.json');
+// 1. 각 db의 서비스 권한을 가져옵니다
+const rtdbServiceAccount = require('./realtimeDB 서비스 json파일 이름');
+const firestoreServiceAccount = require('./firestore 서비스 json 파일 이름');
 
-// 중요: 본인의 Firebase Realtime Database URL로 변경해야 합니다.
-const databaseURL = "https://ljg2020315018-default-rtdb.firebaseio.com/";
 
-admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount),
-  databaseURL: databaseURL
-});
+const rtdbApp = admin.initializeApp({
+  credential: admin.credential.cert(rtdbServiceAccount),
+  databaseURL: "my-realtime-db-url" // <------ 자신의 DB url을 입력하세요
+}, 'rtdbApp');
 
-const db = admin.database();
+const firestoreApp = admin.initializeApp({
+  credential: admin.credential.cert(firestoreServiceAccount)
+}, 'firestoreApp');
 
-module.exports = db;
+const db = rtdbApp.database();
+const firestoreDb = firestoreApp.firestore();
+const firestoreAuth = firestoreApp.auth();
+
+module.exports = {
+  db,
+  firestoreDb,
+  firestoreAuth
+};

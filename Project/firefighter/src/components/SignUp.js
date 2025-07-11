@@ -6,11 +6,10 @@
  */
 
 import React, { useState } from "react";
-import { createUserWithEmailAndPassword } from "firebase/auth";
 import { useNavigate } from "react-router-dom";
-import { auth } from "../firebaseConfig";
 
 function SignUp() {
+    const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState(null);
@@ -23,8 +22,20 @@ function SignUp() {
         setMessage('');
 
         try {
-            // import한 firebase auth를 사용
-            await createUserWithEmailAndPassword(auth, email, password);
+            const response = await fetch('/api/register', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ name, email, password }),
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.message || '회원가입에 실패했습니다.');
+            }
+
             setMessage('회원가입 성공! 로그인 페이지로 이동합니다.');
 
             setTimeout(() => {
@@ -39,6 +50,17 @@ function SignUp() {
         <div>
             <h2>회원가입</h2>
             <form onSubmit={handleSignUp}>
+                <div>
+                    <label htmlFor="name">이름:</label>
+                    <input
+                        type="text"
+                        id="name"
+                        placeholder="이름"
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        required
+                    />
+                </div>
                 <div>
                     <label htmlFor="email">이메일:</label>
                     <input
