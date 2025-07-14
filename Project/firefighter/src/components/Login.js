@@ -37,12 +37,23 @@ function Login() {
             setTimeout(() => {
                 navigate('/');
             }, 1500);
+        } 
 
-        } catch (error) {
-            // 로그인 실패 시 에러 메시지 설정
-            setError(error.message);
-        }
-    };
+        catch (error) {
+            console.error("Firebase에서 받은 실제 오류:", error);
+            let errorMessage = "로그인에 실패했습니다. 다시 시도해주세요.";
+            switch (error.code) {
+                case "auth/user-not-found":
+                case "auth/invalid-credential":
+                    errorMessage = "등록되지 않은 이메일이거나 비밀번호가 틀렸습니다.";
+                    break;
+                case "auth/invalid-email":
+                    errorMessage = "유효하지 않은 이메일 형식입니다.";
+                    break;
+            }
+        setError(errorMessage);
+        };
+    }
 
     // 회원가입 버튼 클릭 시 /signup 경로로 이동하는 함수
     const handleSignUpClick = () => {
