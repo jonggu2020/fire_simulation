@@ -1,4 +1,5 @@
-import React from 'react';
+// firefighter/src/components/FavoritesList.js
+// 즐겨찾기 한 관측소 목록을 가져오는 컴포넌트 입니다
 
 const FavoritesList = ({ favorites, onFavoriteClick }) => {
     const listStyle = {

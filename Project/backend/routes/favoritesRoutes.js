@@ -25,7 +25,6 @@ router.get('/', verifyFirebaseToken, async (req, res) => {
 // POST /api/favorites - 즐겨찾기 추가
 router.post('/', verifyFirebaseToken, async (req, res) => {
     const { uid } = req.user;
-    // --- 수정된 부분: body에서 lat, lon을 추가로 받습니다. ---
     const { stationId, stationName, lat, lon } = req.body;
 
     if (!stationId || !stationName || lat === undefined || lon === undefined) {
@@ -33,10 +32,10 @@ router.post('/', verifyFirebaseToken, async (req, res) => {
     }
     try {
         const userRef = firestoreDb.collection('users').doc(uid);
-        // --- 수정된 부분: 저장하는 객체에 lat, lon을 추가합니다. ---
         await userRef.update({
+            // 관측소 Id, 관측소 이름, 위도, 경도 추가
             favorites: FieldValue.arrayUnion({ stationId, stationName, lat, lon })
-        }, { merge: true }); // 사용자가 처음 즐겨찾기를 추가할 때 favorites 필드가 없으므로 merge 옵션 추가
+        }, { merge: true });
         res.status(201).json({ message: '즐겨찾기에 추가되었습니다.' });
     } catch (error) {
         console.error("즐겨찾기 추가 오류:", error);
@@ -45,6 +44,7 @@ router.post('/', verifyFirebaseToken, async (req, res) => {
 });
 
 // DELETE /api/favorites/:stationId - 즐겨찾기 삭제
+// 임시
 router.delete('/:stationId', verifyFirebaseToken, async (req, res) => {
     const { uid } = req.user;
     const { stationId } = req.params;
