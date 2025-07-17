@@ -3,43 +3,45 @@
  * 로그인 페이지 컴포넌트입니다.
  * Firebase Authentication을 사용하여 이메일과 비밀번호로 로그인합니다.
  */
-
 import React, { useState } from "react";
-// firebaseConfig에서 auth 객체를 직접 import 합니다.
 import { auth } from "../firebaseConfig";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { useNavigate } from "react-router-dom";
+import axios from 'axios';
 
 function Login() {
-    // 이메일, 비밀번호, 에러, 성공 메시지를 위한 state
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState(null);
     const [message, setMessage] = useState('');
     const navigate = useNavigate();
-
     /**
      * 로그인 폼 제출 핸들러
      * @param {React.FormEvent<HTMLFormElement>} e - 폼 이벤트 객체
      */
     const handleLogin = async (e) => {
-        e.preventDefault(); // 폼의 기본 제출 동작 방지
-        setError(null); // 이전 에러 메시지 초기화
-        setMessage(''); // 이전 성공 메시지 초기화
-
+        e.preventDefault();
+        setError(null);
+        setMessage('');
         try {
-            // Firebase를 사용하여 이메일과 비밀번호로 로그인 시도
-            // import한 auth 사용합니다.
-            await signInWithEmailAndPassword(auth, email, password);
-            setMessage('로그인 성공!');
+            const userCredential = await signInWithEmailAndPassword(auth, email, password);
+            const user = userCredential.user;
+
+            const idToken = await user.getIdToken();
+            console.log("발급된 Firebase ID 토큰:", idToken);
+
+            await axios.post('/api/auth/login', { token: idToken });
             
-            // 1.5초 후 메인 페이지('/')로 이동
+            // (선택사항) 백엔드에 로그인 사실을 알리거나 사용자 정보를 저장할 수 있습니다.
+            // 예시: await api.post('/auth/login', { token: idToken });
+
+            setMessage('로그인 성공! 잠시 후 메인 페이지로 이동합니다.');
+
             setTimeout(() => {
                 navigate('/');
             }, 1500);
-        } 
 
-        catch (error) {
+        } catch (error) {
             console.error("Firebase에서 받은 실제 오류:", error);
             let errorMessage = "로그인에 실패했습니다. 다시 시도해주세요.";
             switch (error.code) {
@@ -51,15 +53,13 @@ function Login() {
                     errorMessage = "유효하지 않은 이메일 형식입니다.";
                     break;
             }
-        setError(errorMessage);
-        };
-    }
-
+            setError(errorMessage);
+        }
+    };
     // 회원가입 버튼 클릭 시 /signup 경로로 이동하는 함수
     const handleSignUpClick = () => {
         navigate('/signup');
     };
-
     return (
         <div>
             <h2>로그인</h2>
@@ -96,5 +96,4 @@ function Login() {
         </div>
     );
 }
-
 export default Login;

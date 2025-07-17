@@ -9,10 +9,7 @@ import GeoJSON from 'ol/format/GeoJSON';
 import TileWMS from 'ol/source/TileWMS';
 import { Style, Circle as CircleStyle, Fill, Stroke, RegularShape } from 'ol/style';
 import 'ol/ol.css';
-
-import { transform } from 'ol/proj'; // 이 라인을 추가해주세요.
-
-
+import { transform } from 'ol/proj';
 import {
     VWORLD_XYZ_URL,
     logicalLayersConfig as initialLogicalLayersConfig,
@@ -24,11 +21,16 @@ import {
 import Legend from './Legend';
 import { mountainStationsData } from './mountainStations';
 import { subscribeToStationWeather } from './weatherService';
+import axios from 'axios';
+import { useAuthState } from 'react-firebase-hooks/auth';
+import { auth } from '../firebaseConfig';
+import { getFavorites, addFavorite, removeFavorite } from '../service/apiService';
+import FavoritesList from './FavoritesList';
 
-const WeatherDisplay = ({ selectedStationInfo }) => {
+// WeatherDisplay 컴포넌트: props를 제대로 받도록 수정
+const WeatherDisplay = ({ selectedStationInfo, onToggleFavorite, isLoggedIn, isFavorite }) => {
     const [weatherInfo, setWeatherInfo] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
-
     const [error, setError] = useState(null);
 
     useEffect(() => {
@@ -54,7 +56,6 @@ const WeatherDisplay = ({ selectedStationInfo }) => {
     }, [selectedStationInfo]);
 
     if (!selectedStationInfo) return null;
-
     const displayStyle = {
         position: 'absolute', top: '20px', right: '20px', zIndex: 1001,
         backgroundColor: 'rgba(255, 255, 255, 0.9)', padding: '15px',
@@ -64,8 +65,17 @@ const WeatherDisplay = ({ selectedStationInfo }) => {
 
     return (
         <div style={displayStyle}>
-            <h4 style={{ margin: '0 0 10px 0', borderBottom: '1px solid #ccc', paddingBottom: '5px' }}>
+            <h4 style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '0 0 10px 0', borderBottom: '1px solid #ccc', paddingBottom: '5px' }}>
                 {selectedStationInfo.name} 기상 정보
+                {isLoggedIn && (
+                    <button
+                        onClick={onToggleFavorite}
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '24px', color: '#f0c419' }}
+                        title={isFavorite ? "즐겨찾기에서 삭제" : "즐겨찾기에 추가"}
+                    >
+                        {isFavorite ? '★' : '☆'}
+                    </button>
+                )}
             </h4>
             {isLoading && <p>로딩 중...</p>}
             {error && <p style={{ color: 'red' }}>{error}</p>}
@@ -83,6 +93,9 @@ const WeatherDisplay = ({ selectedStationInfo }) => {
     );
 };
 
+// =================================================================
+// VWorldMap 컴포넌트
+// =================================================================
 const VWorldMap = () => {
     const liveMarkerSourceRef = useRef(null); // 실시간 마커를 위한 새로운 소스(Source) ref
     const [liveMarkers, setLiveMarkers] = useState([]); // 서버에서 받아온 마커 데이터를 저장할 state
@@ -551,12 +564,101 @@ const VWorldMap = () => {
         return () => clearInterval(interval);
     }, []); // 의존성 배열을 비워서, 이 모든 로직이 처음 한 번만 설정되도록 함
 
+    // 인증 및 즐겨찾기 관련 State를 컴포넌트 최상단에 선언
+    console.log('auth 객체:', auth);
+    const [user] = useAuthState(auth);
+    // --- 수정된 부분: favorites state는 이제 객체의 배열을 저장합니다. ---
+    const [favorites, setFavorites] = useState([]);
+
+    // --- 추가된 함수: 즐겨찾기 클릭 시 지도 이동 ---
+    const handleFavoriteSelect = useCallback((favorite) => {
+        if (!olMapRef.current || !favorite.lat || !favorite.lon) return;
+
+        // 1. 위도, 경도 좌표를 지도 좌표계로 변환
+        const coords = [favorite.lon, favorite.lat];
+        const transformedCoords = transform(coords, 'EPSG:4326', olMapRef.current.getView().getProjection());
+
+        // 2. 부드럽게 지도 이동 및 확대
+        olMapRef.current.getView().animate({
+            center: transformedCoords,
+            zoom: 12, // 적절한 확대 레벨
+            duration: 1000 // 1초 동안 애니메이션
+        });
+        
+        // 3. 해당 관측소를 선택된 것으로 설정하여 WeatherDisplay에 정보 표시
+        setSelectedStation({
+            obsid: favorite.stationId,
+            name: favorite.stationName,
+            latitude: favorite.lat,
+            longitude: favorite.lon
+        });
+
+    }, []); // olMapRef는 ref이므로 의존성 배열에 필요 없음
+
+    // --- 수정된 함수: handleToggleFavorite ---
+    const handleToggleFavorite = useCallback(async () => {
+        if (!user) {
+            alert('로그인이 필요한 기능입니다.');
+            return;
+        }
+        if (!selectedStation) {
+            alert('관측소를 먼저 선택해주세요.');
+            return;
+        }
+        const idToken = await user.getIdToken();
+        const isCurrentlyFavorite = favorites.some(fav => fav.stationId === selectedStation.obsid);
+        try {
+            if (isCurrentlyFavorite) {
+                await removeFavorite(selectedStation.obsid, idToken);
+                setFavorites(prev => prev.filter(fav => fav.stationId !== selectedStation.obsid));
+                alert(`'${selectedStation.name}'을(를) 즐겨찾기에서 삭제했습니다.`);
+            } else {
+                await addFavorite(selectedStation, idToken);
+                setFavorites(prev => [...prev, {
+                    stationId: selectedStation.obsid,
+                    stationName: selectedStation.name,
+                    lat: selectedStation.latitude,
+                    lon: selectedStation.longitude
+                }]);
+                alert(`'${selectedStation.name}'을(를) 즐겨찾기에 추가했습니다.`);
+            }
+        } catch (error) {
+            console.error('즐겨찾기 처리 오류:', error);
+            alert(error.response?.data?.message || '요청 처리 중 오류가 발생했습니다.');
+        }
+    }, [user, selectedStation, favorites]);
+
+    // --- 수정된 useEffect: favorites state에 객체 배열을 저장 ---
+    useEffect(() => {
+        if (user) {
+            user.getIdToken().then(idToken => {
+                getFavorites(idToken)
+                    .then(data => {
+                        setFavorites(data.favorites || []);
+                    })
+                    .catch(error => console.error("즐겨찾기 목록 로딩 실패:", error));
+            });
+        } else {
+            setFavorites([]);
+        }
+    }, [user]);
+
 
     return (
         <div style={{ position: 'relative', width: '100%', height: '100vh' }}>
             <div ref={mapContainerRef} style={{ width: '100%', height: '100%' }}></div>
             
-            <WeatherDisplay selectedStationInfo={selectedStation} />
+            {/* --- 추가된 부분: FavoritesList 컴포넌트 렌더링 --- */}
+            {user && <FavoritesList favorites={favorites} onFavoriteClick={handleFavoriteSelect} />}
+
+            {selectedStation && (
+                 <WeatherDisplay
+                    selectedStationInfo={selectedStation}
+                    onToggleFavorite={handleToggleFavorite}
+                    isLoggedIn={!!user}
+                    isFavorite={favorites.some(fav => fav.stationId === selectedStation.obsid)}
+                />
+            )}
             
             <div style={{
                 position: 'absolute', bottom: '20px', left: '50%', transform: 'translateX(-50%)',

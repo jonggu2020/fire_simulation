@@ -6,18 +6,23 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path'); // path 모듈이 있는지 확인해주세요.
 const apiRoutes = require('./routes/apiRoutes');
-const authRoutes = require('./routes/authRoutes');
-
+const authRouter = require('./routes/authRoutes');
+const favoritesRouter = require('./routes/favoritesRoutes');
 const app = express();
 const port = 3001;
 
-app.use(cors());
-app.use(express.json());
+const corsOptions = {
+    origin: 'http://localhost:3000',
+    credentials: true,
+};
 
+app.use(cors(corsOptions));
+app.use(express.json());
 // 1. 기존 시뮬레이션 API 라우트
 // 2. auth API 라우트 추가
 app.use('/api', apiRoutes);
-app.use('/api', authRoutes);
+app.use('/api/auth', authRouter);
+app.use('/api/favorites', favoritesRouter);
 
 // 2. [핵심] 크롤링 데이터를 제공하는 정적 경로 설정
 // __dirname은 현재 파일(apiServer.js)이 있는 'backend' 폴더를 가리킵니다.
