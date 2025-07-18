@@ -628,6 +628,23 @@ const VWorldMap = () => {
         }
     }, [user, selectedStation, favorites]);
 
+    // --- 추가된 함수: 로그아웃 처리 ---
+    const handleLogout = async () => {
+        try {
+            await auth.signOut();
+            // 로그아웃 후 상태 초기화 또는 페이지 새로고침
+            setFavorites([]);
+            setSelectedStation(null);
+            alert('로그아웃 되었습니다.');
+        } catch (error) {
+            console.error("로그아웃 오류:", error);
+            alert('로그아웃 중 오류가 발생했습니다.');
+        }
+    };
+    const handleLogin = () => {
+        // 예시: 로그인 페이지로 이동
+        window.location.href = "/login";
+    };
     // --- 수정된 useEffect: favorites state에 객체 배열을 저장 ---
     useEffect(() => {
         if (user) {
@@ -647,18 +664,34 @@ const VWorldMap = () => {
     return (
         <div style={{ position: 'relative', width: '100%', height: '100vh' }}>
             <div ref={mapContainerRef} style={{ width: '100%', height: '100%' }}></div>
-            
-            {/* --- 추가된 부분: FavoritesList 컴포넌트 렌더링 --- */}
-            {user && <FavoritesList favorites={favorites} onFavoriteClick={handleFavoriteSelect} />}
 
-            {selectedStation && (
-                 <WeatherDisplay
-                    selectedStationInfo={selectedStation}
-                    onToggleFavorite={handleToggleFavorite}
-                    isLoggedIn={!!user}
-                    isFavorite={favorites.some(fav => fav.stationId === selectedStation.obsid)}
-                />
-            )}
+            {/* 왼쪽 상단: 즐겨찾기 목록 */}
+            <FavoritesList favorites={favorites} onFavoriteClick={handleFavoriteSelect} isLoggedIn={!!user} />
+
+            {/* 오른쪽 상단: 사용자 정보, 로그아웃, 날씨 정보 */}
+            <div style={{ position: 'absolute', top: '20px', right: '20px', zIndex: 1002 }}>
+                {!user && (
+                    <div style={{ backgroundColor: 'rgba(255, 255, 255, 0.9)', padding: '10px 15px', borderRadius: '8px', boxShadow: '0 2px 10px rgba(0,0,0,0.2)', 
+                        marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <button onClick={handleLogin} style={{ cursor: 'pointer' }}>로그인</button>
+                    </div>
+                )}
+                {user && (
+                    <div style={{ backgroundColor: 'rgba(255, 255, 255, 0.9)', padding: '10px 15px', borderRadius: '8px', boxShadow: '0 2px 10px rgba(0,0,0,0.2)', 
+                        marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <span style={{ fontWeight: 'bold' }}>{user.displayName}님 환영합니다.</span>
+                        <button onClick={handleLogout} style={{ cursor: 'pointer' }}>로그아웃</button>
+                    </div>
+                )}
+                {selectedStation && (
+                    <WeatherDisplay
+                        selectedStationInfo={selectedStation}
+                        onToggleFavorite={handleToggleFavorite}
+                        isLoggedIn={!!user}
+                        isFavorite={favorites.some(fav => fav.stationId === selectedStation.obsid)}
+                    />
+                )}
+            </div>
             
             <div style={{
                 position: 'absolute', bottom: '20px', left: '50%', transform: 'translateX(-50%)',

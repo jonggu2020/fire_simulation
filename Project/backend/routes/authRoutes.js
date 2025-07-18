@@ -12,6 +12,10 @@ router.use(cookieParser());
 /**
  * @route   POST /api/auth/register
  * @desc    새로운 사용자를 등록합니다. (Firebase Auth & Firestore)
+ * @access  Public
+ * @param {Object} req.body - 사용자 등록 정보 (email, password, name)
+ * @returns {Object} 등록 결과를 포함한 응답 객체
+ * @throws {Error} 사용자 등록 오류 시 400 또는 500 에러 반환
  */
 router.post('/register', async (req, res) => {
     const { email, password, name } = req.body;
@@ -50,6 +54,10 @@ router.post('/register', async (req, res) => {
 /**
  * @route   POST /api/auth/login
  * @desc    로그인 성공 후 HttpOnly 세션 쿠키를 발급합니다.
+ * @access  Public
+ * @param {Object} req.body - 로그인 정보 (token)
+ * @returns {Object} 로그인 결과를 포함한 응답 객체
+ * @throws {Error} 로그인 오류 시 400 또는 500 에러 반환
  */
 router.post('/login', async (req, res) => {
     const { token } = req.body;
@@ -69,6 +77,9 @@ router.post('/login', async (req, res) => {
 /**
  * @route   POST /api/auth/logout
  * @desc    사용자 로그아웃 (HttpOnly 세션 쿠키 삭제)
+ * @access  Public
+ * @returns {Object} 로그아웃 결과를 포함한 응답 객체
+ * @throws {Error} 로그아웃 오류 시 400 또는 500 에러 반환
  */
 router.post('/logout', (req, res) => {
     res.status(200).json({ message: '성공적으로 로그아웃 되었습니다.' });

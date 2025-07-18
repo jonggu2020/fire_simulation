@@ -5,11 +5,11 @@ import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 
 const FsConfig = {
-    // firestore
+    //FireStore
 };
 
 const RtConfig = {
-    //realtime DB
+    // Realtime DB
 };
 
 const FsApp = initializeApp(FsConfig);

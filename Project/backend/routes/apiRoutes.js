@@ -76,6 +76,8 @@ router.get('/grid-with-fuel-info', async (req, res) => {
         res.status(500).json({ error: 'DB 오류' });
     }
 });
+router.get('', async (req, res) => {
 
+})
 // 설정된 라우터를 모듈로 내보냅니다.
 module.exports = router;

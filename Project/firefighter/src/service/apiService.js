@@ -28,6 +28,7 @@ export const getFavorites = async (idToken) => {
  * @returns {Promise<object>} 추가된 즐겨찾기 정보를 반환하는 Promise.
  * @throws {Error} API 요청이 실패했을 때 에러를 발생시킵니다.
  */
+
 export const addFavorite = async (station, idToken) => {
     const response = await axios.post('/api/favorites', 
         { 
