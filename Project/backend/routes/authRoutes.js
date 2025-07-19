@@ -5,9 +5,7 @@
 const express = require('express');
 const router = express.Router();
 const validator = require('validator');
-const cookieParser = require('cookie-parser');
 const { firestoreDb, firestoreAuth } = require('../firebaseAdmin');
-router.use(cookieParser());
 
 /**
  * @route   POST /api/auth/register
@@ -79,7 +77,6 @@ router.post('/login', async (req, res) => {
  * @desc    사용자 로그아웃 (HttpOnly 세션 쿠키 삭제)
  * @access  Public
  * @returns {Object} 로그아웃 결과를 포함한 응답 객체
- * @throws {Error} 로그아웃 오류 시 400 또는 500 에러 반환
  */
 router.post('/logout', (req, res) => {
     res.status(200).json({ message: '성공적으로 로그아웃 되었습니다.' });

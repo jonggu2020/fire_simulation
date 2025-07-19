@@ -27,7 +27,6 @@ import { auth } from '../firebaseConfig';
 import { getFavorites, addFavorite, removeFavorite } from '../service/apiService';
 import FavoritesList from './FavoritesList';
 
-// WeatherDisplay 컴포넌트: props를 제대로 받도록 수정
 const WeatherDisplay = ({ selectedStationInfo, onToggleFavorite, isLoggedIn, isFavorite }) => {
     const [weatherInfo, setWeatherInfo] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
@@ -565,7 +564,7 @@ const VWorldMap = () => {
     }, []); // 의존성 배열을 비워서, 이 모든 로직이 처음 한 번만 설정되도록 함
 
     // 인증 및 즐겨찾기 관련 State를 컴포넌트 최상단에 선언
-    console.log('auth 객체:', auth);
+    // console.log('auth 객체:', auth);
     const [user] = useAuthState(auth);
     // --- 수정된 부분: favorites state는 이제 객체의 배열을 저장합니다. ---
     const [favorites, setFavorites] = useState([]);
