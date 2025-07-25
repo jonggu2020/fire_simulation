@@ -8,6 +8,9 @@ const path = require('path'); // path 모듈이 있는지 확인해주세요.
 const apiRoutes = require('./routes/apiRoutes');
 const authRouter = require('./routes/authRoutes');
 const favoritesRouter = require('./routes/favoritesRoutes');
+const historyRouter = require('./routes/historyRoutes'); // 내역 라우터 추가
+const { verifyFirebaseToken } = require('./middleware/authMiddleware'); // 인증 미들웨어 추가
+
 const app = express();
 const port = 3001;
 
@@ -22,7 +25,9 @@ app.use(express.json());
 // 2. auth API 라우트 추가
 app.use('/api', apiRoutes);
 app.use('/api/auth', authRouter);
-app.use('/api/favorites', favoritesRouter);
+app.use('/api/favorites', verifyFirebaseToken, favoritesRouter); // 실제 함수를 미들웨어로 전달
+app.use('/api/history', verifyFirebaseToken, historyRouter);     // 실제 함수를 미들웨어로 전달
+
 
 // 2. [핵심] 크롤링 데이터를 제공하는 정적 경로 설정
 // __dirname은 현재 파일(apiServer.js)이 있는 'backend' 폴더를 가리킵니다.

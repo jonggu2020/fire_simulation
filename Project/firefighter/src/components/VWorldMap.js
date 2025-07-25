@@ -21,11 +21,12 @@ import {
 import Legend from './Legend';
 import { mountainStationsData } from './mountainStations';
 import { subscribeToStationWeather } from './weatherService';
-import axios from 'axios';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { auth } from '../firebaseConfig';
+import { getHistory, saveHistory } from '../service/historyApiService';
 import { getFavorites, addFavorite, removeFavorite } from '../service/apiService';
 import FavoritesList from './FavoritesList';
+import HistoryList from './HistoryList';
 
 const WeatherDisplay = ({ selectedStationInfo, onToggleFavorite, isLoggedIn, isFavorite }) => {
     const [weatherInfo, setWeatherInfo] = useState(null);
@@ -92,10 +93,10 @@ const WeatherDisplay = ({ selectedStationInfo, onToggleFavorite, isLoggedIn, isF
     );
 };
 
-// =================================================================
-// VWorldMap 컴포넌트
-// =================================================================
 const VWorldMap = () => {
+    const [user] = useAuthState(auth);
+    const [favorites, setFavorites] = useState([]);
+    const [history, setHistory] = useState([]);
     const liveMarkerSourceRef = useRef(null); // 실시간 마커를 위한 새로운 소스(Source) ref
     const [liveMarkers, setLiveMarkers] = useState([]); // 서버에서 받아온 마커 데이터를 저장할 state
     const mapContainerRef = useRef(null);
@@ -218,7 +219,14 @@ const VWorldMap = () => {
 
         const map = new Map({
             target: mapContainerRef.current,
-            layers: [ new TileLayer({ source: new XYZ({ url: VWORLD_XYZ_URL }) }), ],
+            layers: [
+                new TileLayer({
+                    source: new XYZ({
+                        url: VWORLD_XYZ_URL,
+                        crossOrigin: 'anonymous'
+                    })
+                })
+            ],
             view: new View({ center: [127.5, 36.5], zoom: 9, projection: 'EPSG:4326' }),
         });
         olMapRef.current = map;
@@ -272,7 +280,8 @@ const VWorldMap = () => {
                             url: groupConfig.url, 
                             params: { 'LAYERS': individualLayerName, 'FORMAT': 'image/png', 'TILED': true, 'VERSION': '1.1.1' }, 
                             serverType: 'geoserver', 
-                            projection: 'EPSG:4326'
+                            projection: 'EPSG:4326',
+                            crossOrigin: 'anonymous'
                         });
                         const wmsLayer = new TileLayer({ 
                             source: wmsSource, 
@@ -283,7 +292,7 @@ const VWorldMap = () => {
                         wmsLayers.push(wmsLayer);
                     });
                 }
-                layerObject = wmsLayers; 
+                layerObject = wmsLayers;   
             } else if (groupConfig.type === 'hiking_trail') {
                 const vectorSource = new VectorSource({});
                 layerObject = new VectorLayer({ 
@@ -491,6 +500,95 @@ const VWorldMap = () => {
         setSelectedStation(null);
     };
 
+    const handleSaveImage = useCallback(async () => {
+        if (!olMapRef.current) {
+            alert("지도 객체를 찾을 수 없어 이미지를 저장할 수 없습니다.");
+            return;
+        }
+        if (!user) {
+            alert("이미지를 저장하려면 로그인이 필요합니다.");
+            return;
+        }
+        // 시뮬레이션 결과 데이터가 있는지 확인
+        if (!simulationDataRef.current) {
+            alert("저장할 시뮬레이션 결과가 없습니다.");
+            return;
+        }
+
+        // 1. 사용자에게 시뮬레이션 제목 입력받기
+        const title = window.prompt("이 시뮬레이션의 제목을 입력하세요:", `시뮬레이션 - ${new Date().toLocaleString()}`);
+        if (!title) {
+            alert("제목이 입력되지 않아 저장을 취소합니다.");
+            return;
+        }
+
+        const map = olMapRef.current;
+        alert("지도 이미지를 생성하고 결과를 저장하는 중입니다... 완료되면 알려드립니다.");
+
+        map.once('rendercomplete', async () => {
+            try {
+                const mapCanvas = document.createElement('canvas');
+                const size = map.getSize();
+                if (!size || size[0] === 0 || size[1] === 0) {
+                    alert("지도의 크기가 유효하지 않아 저장할 수 없습니다.");
+                    return;
+                }
+                mapCanvas.width = size[0];
+                mapCanvas.height = size[1];
+                const mapContext = mapCanvas.getContext('2d');
+
+                Array.from(map.getViewport().querySelectorAll('.ol-layer canvas, .ol-layer img'))
+                    .forEach(element => {
+                        if (element.width > 0 && element.height > 0) {
+                            const opacity = element.parentNode.style.opacity || element.style.opacity;
+                            mapContext.globalAlpha = opacity === '' ? 1 : Number(opacity);
+                            const transform = element.style.transform;
+                            const matrix = transform ? new DOMMatrix(transform.replace(/ /g, '')) : new DOMMatrix();
+                            mapContext.setTransform(matrix.a, matrix.b, matrix.c, matrix.d, matrix.e, matrix.f);
+                            mapContext.drawImage(element, 0, 0);
+                        }
+                    });
+                
+                mapContext.globalAlpha = 1;
+                mapContext.setTransform(1, 0, 0, 1, 0, 0);
+
+                const blob = await new Promise(resolve => mapCanvas.toBlob(resolve, 'image/png'));
+                if (!blob) throw new Error("이미지 데이터(Blob) 생성에 실패했습니다.");
+
+                // 2. Firebase Storage에 업로드
+                const { storage } = await import('../firebaseConfig');
+                const { ref, uploadBytes, getDownloadURL } = await import('firebase/storage');
+                const userId = user.uid;
+                const timestamp = Date.now();
+                const filePath = `simulations/${userId}_${timestamp}.png`;
+                const storageRef = ref(storage, filePath);
+                const snapshot = await uploadBytes(storageRef, blob);
+                const downloadURL = await getDownloadURL(snapshot.ref);
+
+                // 3. 백엔드 API로 내역 저장 요청 (핵심 추가 부분)
+                const idToken = await user.getIdToken();
+                const historyData = {
+                    title: title,
+                    imageUrl: downloadURL,
+                    simulationData: simulationDataRef.current // 저장된 시뮬레이션 데이터
+                };
+
+                const savedItem = await saveHistory(historyData, idToken);
+                
+                // 4. 저장 성공 시 프론트엔드 상태 업데이트
+                setHistory(prevHistory => [{ ...historyData, id: savedItem.id, createdAt: new Date() }, ...prevHistory]);
+
+                alert("시뮬레이션 내역이 성공적으로 저장되었습니다!");
+
+            } catch (error) {
+                console.error("내역 저장 중 오류 발생:", error);
+                alert(`오류가 발생하여 저장하지 못했습니다: ${error.message}`);
+            }
+        });
+
+        map.renderSync();
+    }, [user])
+
     const handleToggleVisibility = useCallback((name) => {
         setLayerVisibility(prev => ({...prev, [name]: !prev[name]}));
         if (name === '산악기상관측소 마커' && layerVisibility[name]) {
@@ -550,7 +648,7 @@ const VWorldMap = () => {
             }
         } catch (error) {
             console.error('실시간 마커 데이터 처리 중 오류:', error);
-        }
+            }
         };
 
         // 1. 처음 로딩 시 즉시 실행
@@ -562,12 +660,6 @@ const VWorldMap = () => {
         // 3. 컴포넌트가 사라질 때 인터벌 정리
         return () => clearInterval(interval);
     }, []); // 의존성 배열을 비워서, 이 모든 로직이 처음 한 번만 설정되도록 함
-
-    // 인증 및 즐겨찾기 관련 State를 컴포넌트 최상단에 선언
-    // console.log('auth 객체:', auth);
-    const [user] = useAuthState(auth);
-    // --- 수정된 부분: favorites state는 이제 객체의 배열을 저장합니다. ---
-    const [favorites, setFavorites] = useState([]);
 
     // --- 추가된 함수: 즐겨찾기 클릭 시 지도 이동 ---
     const handleFavoriteSelect = useCallback((favorite) => {
@@ -653,9 +745,13 @@ const VWorldMap = () => {
                         setFavorites(data.favorites || []);
                     })
                     .catch(error => console.error("즐겨찾기 목록 로딩 실패:", error));
+                getHistory(idToken)
+                    .then(data => setHistory(data || []))
+                    .catch(error => console.error("시뮬레이션 내역 로딩 실패:", error));
             });
         } else {
             setFavorites([]);
+            setHistory([]);
         }
     }, [user]);
 
@@ -666,6 +762,11 @@ const VWorldMap = () => {
 
             {/* 왼쪽 상단: 즐겨찾기 목록 */}
             <FavoritesList favorites={favorites} onFavoriteClick={handleFavoriteSelect} isLoggedIn={!!user} />
+
+            <HistoryList 
+                history={history}
+                isLoggedIn={!!user} 
+            />
 
             {/* 오른쪽 상단: 사용자 정보, 로그아웃, 날씨 정보 */}
             <div style={{ position: 'absolute', top: '20px', right: '20px', zIndex: 1002 }}>
@@ -706,6 +807,7 @@ const VWorldMap = () => {
                     <button onClick={() => setSimulationTime(3 * 3600)} disabled={!predictionSourceRef.current || predictionSourceRef.current.getFeatures().length === 0}>3시간 후</button>
                     <button onClick={() => setSimulationTime(MAX_SIM_TIME)} disabled={!predictionSourceRef.current || predictionSourceRef.current.getFeatures().length === 0}>최종 결과</button>
                     <button onClick={resetSimulation} title="시뮬레이션을 초기화하고 발화점을 다시 선택합니다.">리셋</button>
+                    <button onClick={handleSaveImage}>이미지로 저장</button>
                 </div>
                 {isSimulating && <p style={{color: 'blue', textAlign: 'center', margin: '10px 0 0 0'}}>시뮬레이션 계산 중...</p>}
                 {simulationError && <p style={{color: 'red', textAlign: 'center', margin: '10px 0 0 0'}}>오류: {simulationError}</p>}

@@ -1,10 +1,9 @@
-// firefighter/src/components/FavoritesList.js
-// 즐겨찾기 한 관측소 목록을 가져오는 컴포넌트 입니다
+import React from 'react';
 
-const FavoritesList = ({ favorites, onFavoriteClick, isLoggedIn }) => {
+const HistoryList = ({ history, onHistoryClick, isLoggedIn }) => {
     const listStyle = {
         position: 'absolute',
-        top: '350px',
+        top: '480px', // 즐겨찾기 목록 아래에 위치하도록 조정
         left: '20px',
         zIndex: 1001,
         backgroundColor: 'rgba(255, 255, 255, 0.9)',
@@ -12,8 +11,8 @@ const FavoritesList = ({ favorites, onFavoriteClick, isLoggedIn }) => {
         borderRadius: '8px',
         boxShadow: '0 2px 10px rgba(0,0,0,0.2)',
         width: '250px',
-        minHeight: '100px', 
-        maxHeight: '300px',
+        minHeight: '100px',
+        maxHeight: '400px',
         overflowY: 'auto',
         display: 'flex',
         flexDirection: 'column'
@@ -27,34 +26,37 @@ const FavoritesList = ({ favorites, onFavoriteClick, isLoggedIn }) => {
 
     const messageStyle = {
         textAlign: 'center',
-        margin: 'auto', // 수직 및 수평 중앙 정렬
+        margin: 'auto',
         color: '#555'
     };
 
     return (
         <div style={listStyle}>
-            <h4 style={{ marginTop: 0, marginBottom: '10px' }}>⭐ 즐겨찾는 관측소</h4>
+            <h4 style={{ marginTop: 0, marginBottom: '10px' }}>🕒 내 시뮬레이션 내역</h4>
             {!isLoggedIn ? (
                 <p style={messageStyle}>로그인이 필요한 기능입니다.</p>
-            ) : favorites && favorites.length > 0 ? (
+            ) : history && history.length > 0 ? (
                 <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
-                    {favorites.map(fav => (
+                    {history.map(item => (
                         <li 
-                            key={fav.stationId} 
+                            key={item.id} 
                             style={itemStyle}
-                            onClick={() => onFavoriteClick(fav)}
+                            onClick={() => onHistoryClick(item)}
                             onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f0f0f0'}
                             onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                         >
-                            {fav.stationName}
+                            {item.title}
+                            <span style={{ fontSize: '0.8em', color: '#777', display: 'block' }}>
+                                {new Date(item.createdAt.seconds * 1000).toLocaleString()}
+                            </span>
                         </li>
                     ))}
                 </ul>
             ) : (
-                <p style={messageStyle}>즐겨찾는 관측소가 없습니다.</p>
+                <p style={messageStyle}>저장된 내역이 없습니다.</p>
             )}
         </div>
     );
 };
 
-export default FavoritesList;
+export default HistoryList;

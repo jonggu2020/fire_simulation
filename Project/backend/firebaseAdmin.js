@@ -17,9 +17,11 @@ const firestoreApp = admin.initializeApp({
 const db = rtdbApp.database();
 const firestoreDb = firestoreApp.firestore();
 const firestoreAuth = firestoreApp.auth();
+const storage = firestoreApp.storage();
 
 module.exports = {
   db,
   firestoreDb,
-  firestoreAuth
+  firestoreAuth,
+  storage
 };
