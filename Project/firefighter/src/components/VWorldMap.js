@@ -501,21 +501,23 @@ const VWorldMap = () => {
     };
 
     const handleSaveImage = useCallback(async () => {
+        // 1. 조건 확인 : 지도 객체가 없으면 함수를 중단합니다.
         if (!olMapRef.current) {
             alert("지도 객체를 찾을 수 없어 이미지를 저장할 수 없습니다.");
             return;
         }
+        // 1. 조건 확인 : 사용자가 로그인하지 않았으면 함수를 중단합니다.
         if (!user) {
             alert("이미지를 저장하려면 로그인이 필요합니다.");
             return;
         }
-        // 시뮬레이션 결과 데이터가 있는지 확인
+        // 1. 조건 확인 : 시뮬레이션 결과 데이터가 있는지 확인
         if (!simulationDataRef.current) {
             alert("저장할 시뮬레이션 결과가 없습니다.");
             return;
         }
 
-        // 1. 사용자에게 시뮬레이션 제목 입력받기
+        // 2. 사용자로부터 시뮬레이션 제목 입력받기
         const title = window.prompt("이 시뮬레이션의 제목을 입력하세요:", `시뮬레이션 - ${new Date().toLocaleString()}`);
         if (!title) {
             alert("제목이 입력되지 않아 저장을 취소합니다.");
@@ -527,8 +529,11 @@ const VWorldMap = () => {
 
         map.once('rendercomplete', async () => {
             try {
+                // 3. 지도 캡처를 위한 새로운 캔버스(Canvas) 생성
                 const mapCanvas = document.createElement('canvas');
                 const size = map.getSize();
+
+                // 지도의 크기가 유효하지 않은 경우(너비 또는 높이가 0) 오류 처리
                 if (!size || size[0] === 0 || size[1] === 0) {
                     alert("지도의 크기가 유효하지 않아 저장할 수 없습니다.");
                     return;
@@ -537,25 +542,32 @@ const VWorldMap = () => {
                 mapCanvas.height = size[1];
                 const mapContext = mapCanvas.getContext('2d');
 
+                // 4. 지도 뷰포트 내의 모든 레이어(canvas, img)를 순회하며 캡처용 캔버스에 그리기
                 Array.from(map.getViewport().querySelectorAll('.ol-layer canvas, .ol-layer img'))
                     .forEach(element => {
                         if (element.width > 0 && element.height > 0) {
+                            // 레이어의 투명도(opacity) 값을 가져옵니다. 없으면 기본값 1을 사용합니다.
                             const opacity = element.parentNode.style.opacity || element.style.opacity;
                             mapContext.globalAlpha = opacity === '' ? 1 : Number(opacity);
+                            // 레이어의 CSS transform 속성을 가져와 변환 행렬(matrix)을 생성합니다.
+                            // 이를 통해 레이어의 이동, 확대/축소, 회전 상태를 그대로 복제할 수 있습니다
                             const transform = element.style.transform;
                             const matrix = transform ? new DOMMatrix(transform.replace(/ /g, '')) : new DOMMatrix();
                             mapContext.setTransform(matrix.a, matrix.b, matrix.c, matrix.d, matrix.e, matrix.f);
+                            // 현재 설정된 변환과 투명도를 적용하여 레이어 이미지를 캡처용 캔버스에 그립니다.
                             mapContext.drawImage(element, 0, 0);
                         }
                     });
-                
+                // 5. 다음 작업을 위해 전역 알파값과 변환 행렬을 초기 상태로 되돌립니다.
                 mapContext.globalAlpha = 1;
                 mapContext.setTransform(1, 0, 0, 1, 0, 0);
 
+                // 6. 캔버스 내용을 Blob(Binary Large Object) 객체로 변환
+                // Firebase Storage는 blob에 최적화 되어있음
                 const blob = await new Promise(resolve => mapCanvas.toBlob(resolve, 'image/png'));
                 if (!blob) throw new Error("이미지 데이터(Blob) 생성에 실패했습니다.");
 
-                // 2. Firebase Storage에 업로드
+                // 7. Firebase Storage에 이미지 업로드
                 const { storage } = await import('../firebaseConfig');
                 const { ref, uploadBytes, getDownloadURL } = await import('firebase/storage');
                 const userId = user.uid;
@@ -565,14 +577,15 @@ const VWorldMap = () => {
                 const snapshot = await uploadBytes(storageRef, blob);
                 const downloadURL = await getDownloadURL(snapshot.ref);
 
-                // 3. 백엔드 API로 내역 저장 요청 (핵심 추가 부분)
+                // 8. 백엔드 API로 내역 저장 요청
                 const idToken = await user.getIdToken();
                 const historyData = {
                     title: title,
                     imageUrl: downloadURL,
-                    simulationData: simulationDataRef.current // 저장된 시뮬레이션 데이터
+                    simulationData: simulationDataRef.current // <=== 시뮬레이션 데이터
                 };
 
+                // 백엔드 historyApiService를 통해 /api/history에 POST 요청을 보내 데이터를 저장합니다.
                 const savedItem = await saveHistory(historyData, idToken);
                 
                 // 4. 저장 성공 시 프론트엔드 상태 업데이트

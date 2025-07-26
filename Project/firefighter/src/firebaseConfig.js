@@ -3,7 +3,7 @@ import { initializeApp } from 'firebase/app';
 import { getDatabase } from 'firebase/database';
 import { getAuth } from 'firebase/auth'; 
 import { getFirestore } from 'firebase/firestore';
-import { getStorage } from 'firebase/storage';
+import { getStorage } from 'firebase/storage'; // 1. storage import 합니다.
 
 const FsConfig = {
     //FireStore
