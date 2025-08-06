@@ -4,7 +4,7 @@ const express = require('express');
 const router = express.Router();
 // 데이터베이스 연결 설정을 가져옵니다.
 const pool = require('../config/db');
-// ??
+// simulationService에서 필요한 함수들을 가져옵니다.
 const { 
     runFireSpreadPrediction, 
     getGridData, 
@@ -76,8 +76,8 @@ router.get('/grid-with-fuel-info', async (req, res) => {
         res.status(500).json({ error: 'DB 오류' });
     }
 });
-router.get('', async (req, res) => {
 
-})
+// ✅ [수정] 오류의 원인이었던 비어있는 라우터를 완전히 제거했습니다.
+
 // 설정된 라우터를 모듈로 내보냅니다.
 module.exports = router;

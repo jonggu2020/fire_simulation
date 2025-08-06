@@ -5,7 +5,9 @@ import axios from 'axios';
  * @description 프론트엔드에서 백엔드 API와 통신하여 시뮬레이션 내역 데이터를 관리하는 함수들을 정의합니다.
  */
 
-const API_BASE_URL = 'http://123.212.210.230:4444/api';
+// ✅ [수정] 하드코딩된 IP 주소를 제거하고 상대 경로를 사용하도록 변경합니다.
+// 이렇게 하면 React의 프록시 설정을 통해 API 요청이 전달됩니다.
+const API_BASE_URL = '/api';
 
 /**
  * 완료된 시뮬레이션 결과를 서버에 저장합니다.
@@ -18,6 +20,7 @@ const API_BASE_URL = 'http://123.212.210.230:4444/api';
  * @throws {Error} API 요청이 실패했을 때 에러를 발생시킵니다.
  */
 export const saveHistory = async (data, idToken) => {
+    // API_BASE_URL이 상대 경로로 변경됨에 따라 URL 구성 방식도 수정합니다.
     const response = await axios.post(`${API_BASE_URL}/history`, data, {
         headers: { 'Authorization': `Bearer ${idToken}` }
     });

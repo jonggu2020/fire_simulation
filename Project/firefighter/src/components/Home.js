@@ -11,7 +11,6 @@ const Home = () => {
   const navigate = useNavigate();
   const [loaded, setLoaded] = useState(false);
   const [hoveredIndex, setHoveredIndex] = useState(null);
-  // 3개의 <img>를 담을 ref 배열
   const bannerRefs = useRef([]);
 
   useEffect(() => {
@@ -25,7 +24,6 @@ const Home = () => {
     '산불 발생 즉시 119에 신고하세요'
   ];
 
-  // 공통 인라인 스타일
   const styles = {
     page: {
       backgroundColor: '#F5F5F5',
@@ -66,7 +64,7 @@ const Home = () => {
       boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
       cursor: 'pointer',
       opacity: loaded ? 1 : 0.4,             
-      transition: 'opacity 1.2s ease-in',  //이미지 나타나는 시간 이걸로 조정
+      transition: 'opacity 1.2s ease-in',
     },
     overlayText: {
       position: 'absolute',
@@ -80,12 +78,16 @@ const Home = () => {
       pointerEvents: 'none',
       whiteSpace: 'nowrap',
     },
+    buttonContainer: { // ✅ [추가] 버튼들을 감싸는 컨테이너
+        display: 'flex',
+        gap: '20px',
+        marginTop: '80px',
+    },
     button: {
-      marginTop: '80px',
       padding: '16px 80px',
       fontSize: '1.4rem',
       fontWeight: 'bold',
-      minwidth: '200px',
+      minWidth: '200px',
       height: 'auto',
       cursor: 'pointer',
       borderRadius: '8px',
@@ -94,6 +96,9 @@ const Home = () => {
       color: 'white',
       transition: 'background-color 0.2s ease',
     },
+    secondaryButton: { // ✅ [추가] 새로운 버튼을 위한 스타일
+        backgroundColor: '#6c757d',
+    }
   };
 
   const banners = [banner1, banner2, banner3];
@@ -135,14 +140,25 @@ const Home = () => {
         사용자가 원하는 위치의 피해경로를 예측해보세요
       </h1>
 
-      <button
-        style={styles.button}
-        onClick={() => navigate('/map')}
-        onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#a33')}
-        onMouseLeave={e => (e.currentTarget.style.backgroundColor = '#EB5C42')}
-      >
-        시작하기
-      </button>
+      {/* ✅ [수정] 버튼들을 컨테이너로 감싸고 새 버튼을 추가합니다. */}
+      <div style={styles.buttonContainer}>
+        <button
+            style={styles.button}
+            onClick={() => navigate('/map')}
+            onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#a33')}
+            onMouseLeave={e => (e.currentTarget.style.backgroundColor = '#EB5C42')}
+        >
+            예측 시뮬레이션
+        </button>
+        <button
+            style={{...styles.button, ...styles.secondaryButton}}
+            onClick={() => navigate('/historical')}
+            onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#5a6268')}
+            onMouseLeave={e => (e.currentTarget.style.backgroundColor = '#6c757d')}
+        >
+            과거 산불사례
+        </button>
+      </div>
     </div>
   );
 };

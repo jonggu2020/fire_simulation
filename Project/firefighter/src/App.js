@@ -16,6 +16,10 @@ import Home from './components/Home';
 import Login from './components/Login';
 import SignUp from './components/SignUp';
 
+
+// ✅ [추가] 새로 만든 HistoricalMap 컴포넌트를 가져옵니다.
+import HistoricalMap from './components/HistoricalMap';
+
 /**
  * App 컴포넌트
  * 
@@ -39,6 +43,9 @@ function App() {
         
         {/* 회원가입 페이지 라우트 */}
         <Route path="/signup" element={<SignUp />} />  
+
+        {/* ✅ [추가] '/historical' 경로에 HistoricalMap 컴포넌트를 연결합니다. */}
+        <Route path="/historical" element={<HistoricalMap />} />
       </Routes>
     </BrowserRouter>
   );
