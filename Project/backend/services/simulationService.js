@@ -29,9 +29,15 @@ const MINIMUM_ROS_TO_SPREAD = 0.05;
 let historicalFireStarts = [];
 
 async function loadHistoricalFireStarts() {
+    // 함수 시작 부분은 동일
     if (historicalFireStarts.length > 0) return;
+    
+    // ✅ [수정] CSV 파일 경로가 'training_dataset_final.csv'로 되어있으므로,
+    // 이전 단계에서 수정한 파일과 동일한 파일을 가리키는지 확인이 필요합니다.
+    // 만약 파일 이름이 다르다면, 실제 사용하는 파일 이름으로 경로를 수정해야 합니다.
     const csvFilePath = path.join(__dirname, '..', 'data', 'training_dataset_final.csv');
     console.log(`과거 산불 사례 데이터 로딩 시작: ${csvFilePath}`);
+
     const allRows = await new Promise((resolve, reject) => {
         const rows = [];
         fs.createReadStream(csvFilePath)
@@ -40,8 +46,15 @@ async function loadHistoricalFireStarts() {
             .on('end', () => resolve(rows))
             .on('error', (error) => reject(error));
     });
-    console.log(`CSV 파일에서 총 ${allRows.length}개의 행을 읽었습니다. 데이터 구조를 생성합니다...`);
-    allRows.forEach(row => {
+    console.log(`CSV 파일에서 총 ${allRows.length}개의 행을 읽었습니다.`);
+
+    // ✅ [수정] status가 'excluded'인 데이터를 필터링하는 로직 추가
+    const filteredRows = allRows.filter(row => row.status !== 'excluded');
+    console.log(` -> 제외된 데이터를 필터링 후 ${filteredRows.length}개의 행을 처리합니다.`);
+
+
+    // ✅ [수정] 'allRows' 대신 'filteredRows'를 사용하여 데이터를 처리합니다.
+    filteredRows.forEach(row => {
         if (!row.event_id || row.event_id.trim() === '') return;
         for (const key in row) {
             if (!isNaN(row[key]) && row[key] !== '') {
@@ -49,17 +62,26 @@ async function loadHistoricalFireStarts() {
             }
         }
     });
+    
     const SMALL_FIRE_THRESHOLD = 50;
     const MEDIUM_FIRE_THRESHOLD = 200;
-    allRows.forEach(startInfo => {
+
+    // ✅ [수정] 'allRows' 대신 'filteredRows'를 사용하여 데이터를 처리합니다.
+    filteredRows.forEach(startInfo => {
         const count = startInfo.cell_count || 1;
         if (count <= SMALL_FIRE_THRESHOLD) startInfo.fire_class = '소형';
         else if (count <= MEDIUM_FIRE_THRESHOLD) startInfo.fire_class = '중형';
         else startInfo.fire_class = '대형';
     });
-    historicalFireStarts = allRows;
+    
+    // ✅ [수정] 필터링된 데이터를 전역 변수에 할당합니다.
+    historicalFireStarts = filteredRows;
     console.log(`✅ ${historicalFireStarts.length}개의 과거 산불 시작점 로딩 및 등급 분류 완료.`);
 }
+
+
+
+
 
 async function preClassifyFire(features) {
     try {
@@ -410,6 +432,8 @@ const getHistoricalFires = async () => {
     const firesById = {};
     for (const row of historicalFireStarts) {
         if (!row.event_id) continue;
+        
+        // ✅ [오류 수정] 객체 속성에 접근할 때 대괄호 표기법을 사용합니다.
         if (!firesById[row.event_id]) {
             firesById[row.event_id] = {
                 id: row.event_id,
@@ -420,6 +444,7 @@ const getHistoricalFires = async () => {
         const timestamp = new Date(`${row.acq_date}T${String(row.acq_time).padStart(4, '0').slice(0, 2)}:${String(row.acq_time).padStart(4, '0').slice(2, 4)}:00Z`).getTime();
         row.timestamp = timestamp;
         
+        // ✅ [오류 수정] 대괄호 표기법 사용
         if (timestamp < firesById[row.event_id].minTimestamp) {
             firesById[row.event_id].minTimestamp = timestamp;
         }
@@ -428,37 +453,66 @@ const getHistoricalFires = async () => {
 
     const processedFires = [];
     for (const eventId in firesById) {
+        // ✅ [오류 수정] 대괄호 표기법 사용
         const fireEvent = firesById[eventId];
-        
-        const features = fireEvent.rows.map(row => {
-            const ignitionTime = (row.timestamp - fireEvent.minTimestamp) / 1000;
-            const burnoutTime = ignitionTime + 3600; 
-            return {
-                type: 'Feature',
-                geometry: { type: 'Point', coordinates: [row.longitude, row.latitude] },
-                properties: {
-                    id: row.grid_id,
-                    ignitionTime: ignitionTime,
-                    burnoutTime: burnoutTime
-                }
-            };
-        });
+        // ✅ [오류 수정] 배열의 첫 번째 요소에 접근하는 방식
+        const firstRow = fireEvent.rows[0];
 
-        features.sort((a, b) => a.properties.ignitionTime - b.properties.ignitionTime);
+        const mappedName = firstRow.mapped_fire_name;
+        if (mappedName && String(mappedName).trim() !== '') {
+            const title = mappedName;
 
-        const simulationEndTime = features.reduce((max, f) => Math.max(max, f.properties.burnoutTime || 0), 0);
-        const scenarioName = fireEvent.rows[0].fire_class || '알수없음';
+            let features = fireEvent.rows.map(row => {
+                const ignitionTime = (row.timestamp - fireEvent.minTimestamp) / 1000;
+                const burnoutTime = ignitionTime + 3600;
+                return {
+                    type: 'Feature',
+                    geometry: { type: 'Point', coordinates: [parseFloat(row.longitude), parseFloat(row.latitude)] },
+                    properties: {
+                        id: row.grid_id,
+                        ignitionTime: ignitionTime,
+                        burnoutTime: burnoutTime,
+                        isConnectingLine: false
+                    }
+                };
+            });
 
-        processedFires.push({
-            id: eventId,
-            title: `실제사례: ${eventId.replace('fire_', '')}`,
-            simulationData: {
-                features: features,
-                timeBoundaries: [],
-                simulationEndTime: simulationEndTime,
-                scenarioName: scenarioName
+            features.sort((a, b) => a.properties.ignitionTime - b.properties.ignitionTime);
+
+            if (features.length > 1) {
+                // ✅ [오류 수정] 배열의 첫 요소와 마지막 요소에 접근하는 방식
+                const startPoint = features[0].geometry.coordinates;
+                const endPoint = features[features.length - 1].geometry.coordinates;
+                
+                features.push({
+                    type: 'Feature',
+                    geometry: {
+                        type: 'LineString',
+                        coordinates: [startPoint, endPoint]
+                    },
+                    properties: {
+                        isConnectingLine: true
+                    }
+                });
             }
-        });
+
+            const simulationEndTime = features
+                .filter(f => f.geometry.type === 'Point')
+                .reduce((max, f) => Math.max(max, f.properties.burnoutTime || 0), 0);
+            
+            const scenarioName = firstRow.fire_class || '알수없음';
+
+            processedFires.push({
+                id: eventId,
+                title: title,
+                simulationData: {
+                    features: features,
+                    timeBoundaries: [],
+                    simulationEndTime: simulationEndTime,
+                    scenarioName: scenarioName
+                }
+            });
+        }
     }
 
     return processedFires;
