@@ -84,7 +84,7 @@ const WeatherDisplay = ({ selectedStationInfo, onToggleFavorite, isLoggedIn, isF
 
     if (!selectedStationInfo) return null;
     const displayStyle = {
-        position: 'absolute', top: '20px', right: '20px', zIndex: 1001,
+        position: 'absolute', top: '50px', right: '7px', zIndex: 1001,
         backgroundColor: 'rgba(255, 255, 255, 0.9)', padding: '15px',
         borderRadius: '8px', boxShadow: '0 2px 10px rgba(0,0,0,0.2)',
         width: '280px', fontSize: '13px'
