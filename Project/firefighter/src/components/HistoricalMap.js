@@ -196,7 +196,7 @@ const HistoricalMap = () => {
 
             <button 
                 onClick={() => navigate('/map')} 
-                style={{ position: 'absolute', top: '20px', right: '20px', zIndex: 1002, padding: '10px 15px', cursor: 'pointer' }}
+                style={{ position: 'absolute', top: '10px', right: '20px', zIndex: 1002, padding: '10px 15px', cursor: 'pointer' }}
             >
                 예측 시뮬레이션으로 이동
             </button>
@@ -204,7 +204,7 @@ const HistoricalMap = () => {
             {(isLoading || selectedFire) && (
                 <div style={{
                     position: 'absolute', bottom: '20px', left: '50%', transform: 'translateX(-50%)',
-                    backgroundColor: 'rgba(255, 255, 255, 0.9)', padding: '15px', borderRadius: '8px',
+                    backgroundColor: 'rgba(235, 235, 235, 0.9)', padding: '15px', borderRadius: '8px',
                     boxShadow: '0 2px 10px rgba(0,0,0,0.2)', zIndex: 1000, width: '80%', maxWidth: '900px'
                 }}>
                     {isLoading ? (
