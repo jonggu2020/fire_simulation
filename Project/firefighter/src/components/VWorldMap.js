@@ -28,6 +28,33 @@ import { getFavorites, addFavorite, removeFavorite } from '../service/apiService
 import FavoritesList from './FavoritesList';
 import HistoryList from './HistoryList';
 
+import { Link } from 'react-router-dom';
+import logoImage from '../assets/firefighter_logo.png';
+
+<div style={{
+  display: 'flex',
+  alignItems: 'center',
+  gap: '12px',
+  padding: '16px 24px',
+  backgroundColor: '#f5f5f5',
+  borderBottom: '1px solid #ccc',
+  position: 'fixed',
+  top: 0,
+  left: 0,
+  width: '100%',
+  zIndex: 10000, // ⭐ 다른 요소보다 위로
+}}>
+  <Link to="/" style={{ display: 'flex', alignItems: 'center', textDecoration: 'none' }}>
+    <img src={logoImage} alt="로고" style={{ height: '28px', width: '28px', marginRight: '8px' }} />
+    <span style={{ fontSize: '1.3rem', fontWeight: 'bold', color: '#333' }}>
+      <span style={{ color: '#EB5C42' }}>Fire</span>Fighter
+    </span>
+  </Link>
+</div>
+
+
+
+
 const WeatherDisplay = ({ selectedStationInfo, onToggleFavorite, isLoggedIn, isFavorite }) => {
     const [weatherInfo, setWeatherInfo] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
@@ -119,10 +146,7 @@ const VWorldMap = () => {
 
     const [layerOpacities, setLayerOpacities] = useState({
         '산불 확산 시뮬레이션': 1,
-        '아산천안 임상도': 1,
-        '등산로': 1,
-        '아산천안 토양도': 1,
-        '연료 등급 지도': 0.8,
+       
     });
     
     const [collapsedLegends, setCollapsedLegends] = useState(() => {
@@ -336,7 +360,11 @@ const VWorldMap = () => {
                 }
                 map.addLayer(layerObject);
             } else if (groupConfig.type === 'mapped_grid_data_vector') {
-                layerObject = new VectorLayer({ source: gridSourceRef.current, style: new Style({ image: new CircleStyle({ radius: 2.5, fill: new Fill({ color: 'rgba(0, 128, 0, 0.6)' }) }) }) });
+                layerObject = new VectorLayer({ 
+                    source: gridSourceRef.current,
+                     style: new Style({ image: new CircleStyle({ radius: 2.5, fill: new Fill({ color: 'rgba(0, 128, 0, 0.6)' }) }) }),
+                     visible: layerVisibility[groupConfig.name]  });
+                   
                 fetch(groupConfig.url).then(res => res.json()).then(geojson => {
                     const features = new GeoJSON().readFeatures(geojson, { dataProjection: 'EPSG:4326', featureProjection: map.getView().getProjection() });
                     gridSourceRef.current.addFeatures(features);
@@ -549,9 +577,7 @@ const VWorldMap = () => {
         setSimulationError(null);
         setIsSimulating(false);
         setActiveTimeBoundaries(null);
-        if (layerRefs.current['전국 격자 데이터']) { 
-            layerRefs.current['전국 격자 데이터'].setVisible(true); 
-        }
+        setLayerVisibility(prev => ({...prev, ['전국 격자 데이터']: true})); 
         setSelectedStation(null);
     };
     
@@ -778,7 +804,7 @@ const VWorldMap = () => {
                 {user && (
                     <div style={{ backgroundColor: 'rgba(255, 255, 255, 0.9)', padding: '10px 15px', borderRadius: '8px', boxShadow: '0 2px 10px rgba(0,0,0,0.2)', 
                         marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <span style={{ fontWeight: 'bold' }}>{user.displayName}님 환영합니다.</span>
+                        <span style={{ fontWeight: 'bold' }}>{user.displayName}님</span>
                         <button onClick={handleLogout} style={{ cursor: 'pointer' }}>로그아웃</button>
                     </div>
                 )}
@@ -794,8 +820,8 @@ const VWorldMap = () => {
             
             <div style={{
                 position: 'absolute', bottom: '20px', left: '50%', transform: 'translateX(-50%)',
-                backgroundColor: 'rgba(255, 255, 255, 0.9)', padding: '15px', borderRadius: '8px',
-                boxShadow: '0 2px 10px rgba(0,0,0,0.2)', zIndex: 1000, width: '80%', maxWidth: '900px'
+                backgroundColor: 'rgba(239, 239, 239, 0.9)', padding: '15px', borderRadius: '8px',
+                boxShadow: '0 2px 10px rgba(223, 96, 76, 0.34)', zIndex: 1000, width: '80%', maxWidth: '900px'
             }}>
                 <div style={{display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '10px'}}>
                     <b style={{fontSize: '14px', minWidth: '120px'}}>
