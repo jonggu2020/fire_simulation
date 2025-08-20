@@ -1,3 +1,9 @@
+/* [추가] 이 부분을 파일 최상단에 추가하세요. */
+body, .App, button, input {
+  font-family: 'Malgun Gothic', 'Apple SD Gothic Neo', 'Nanum Gothic', Dotum, sans-serif;
+}
+
+
 /* App.css */
 .App {
   text-align: center; /* 앱 내용 중앙 정렬 (선택 사항) */
