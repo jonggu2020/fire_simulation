@@ -1,0 +1,95 @@
+/* 회원가입 스타일 */
+
+.signup-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    background-color: #f8f8f8;
+  }
+  
+  .signup-wrapper {
+    width: 100%;
+    max-width: 450px;
+    padding: 40px 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background-color: #f8f8f8;
+  }
+  
+  .signup-header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 10px;
+  }
+  
+  .signup-logo {
+    width: 120px;
+    margin-bottom: 0px;
+  }
+  
+  .signup-title {
+    font-size: 35px;
+    font-weight: 700;
+    color: #000;
+    margin: 0;
+  }
+  
+  .red-F {
+    color: #B33E2C;
+  }
+  
+  .signup-divider {
+    width: 100%;
+    margin: 15px 0; /* 위아래 여백만 주고 */
+    border: none;
+    border-top: 1px solid 444;
+    display: none;
+  }
+  
+  .signup-form {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .signup-label {
+    font-size: 15px;
+    font-weight: 590;
+    color: #444;
+    margin-bottom: 1px;  /* ❗라벨이랑 input 사이 딱 붙게 */
+    margin-top: 5px;     /* ❗위 라벨들 간격 조금 */
+  }
+  
+  .signup-input {
+    padding: 12px;
+    font-size: 16px;
+    border: 1px solid #333;
+    border-radius: 10px;
+    background-color: #fff;
+    outline: none;
+  }
+  
+  .signup-button {
+    padding: 16px;
+    background-color: #f25c43;
+    color: white;
+    font-size: 16px;
+    font-weight: bold;
+    border: none;
+    border-radius: 15px;
+    cursor: pointer;
+    margin-top: 30px; /* 버튼 위만 여백 */
+  }
+  
+  .signup-success {
+    color: green;
+    margin-top: 15px;
+  }
+  
+  .signup-error {
+    color: red;
+    margin-top: 15px;
+  }
