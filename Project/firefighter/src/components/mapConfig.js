@@ -3,8 +3,22 @@ import Stroke from 'ol/style/Stroke';
 import Fill from 'ol/style/Fill';
 import Circle from 'ol/style/Circle';
 import Icon from 'ol/style/Icon';
-
+import fireIcon from '../assets/fire.png'
 export const VWORLD_XYZ_URL = 'http://xdworld.vworld.kr:8080/2d/Base/201802/{z}/{x}/{y}.png?apiKey=B60B525E-129D-3B8B-880F-77C24CF86AE3';
+
+// 2. 기본 아이콘 스타일 정의
+export const fireMarkerStyle = {
+    src: fireIcon,
+    scale: 0.1, // 이미지 크기 조절 (필요에 따라 0.05 ~ 0.2 사이 값으로 조정)
+    opacity: 0.9
+};
+
+// 3. 상태별 필터(색상) 정의
+export const fireMarkerStyleFilters = {
+    // '발생'과 '진화중'은 필터 없음 (원본 이미지 사용)
+    '진화완료': 'rgb(80, 80, 80)', // 회색 필터
+    '산불종료': 'rgb(0, 255, 136)'   // 초록색 필터
+};
 
 export const fireSpreadColors = {
     burning: 'rgba(255, 0, 0, 0.8)',
@@ -67,42 +81,9 @@ export const fuelRatingDescriptions = {
 };
 
 export const logicalLayersConfig = [
-    { 
-        name: '아산천안 토양도', 
-        type: 'soil', 
-        layerNames: ['ne:Asan_Cheonan_Soil_1', 'ne:Asan_Cheonan_Soil_2', 'ne:Asan_Cheonan_Soil_3'], 
-        // [수정] GeoServer URL 변경
-        url: 'http://123.212.210.230:5555/geoserver/ne/wms', 
-        visible: false, 
-        isCollapsibleLegend: true, 
-        colorMap: asanCheonanSoilColorMap, 
-        codeDescriptions: asanCheonanSoilCodeDescriptions, 
-        filterAttribute: 'SLTP_CD'
-    },
-    { 
-        name: '아산천안 임상도', 
-        type: 'imsangdo', 
-        layerNames: ['ne:imsangdo_part1', 'ne:imsangdo_part2', 'ne:imsangdo_part3'], 
-        // [수정] GeoServer URL 변경
-        url: 'http://123.212.210.230:5555/geoserver/ne/wms', 
-        visible: false,
-        isCollapsibleLegend: true, 
-        colorMap: imsangdoColorMap, 
-        codeDescriptions: imsangdoCodeDescriptions, 
-        filterAttribute: 'FRTP_CD'
-    },
-    { 
-        name: '등산로', 
-        type: 'hiking_trail', 
-        fileUrls: ['/merged_hiking_trails.geojson'], 
-        visible: false,
-        isCollapsibleLegend: false, 
-        legendInfo: hikingTrailLegendInfo 
-    },
     {
         name: '연료 등급 지도',
         type: 'fuel_rating',
-        // [수정] API 서버 URL을 상대 경로로 변경
         url: '/api/grid-with-fuel-info',
         visible: false,
         isCollapsibleLegend: true,
@@ -124,7 +105,6 @@ export const logicalLayersConfig = [
     { 
         name: '전국 격자 데이터',
         type: 'mapped_grid_data_vector', 
-        // [수정] API 서버 URL을 상대 경로로 변경
         url: '/api/mapped-grid-data', 
         visible: false, 
         isCollapsibleLegend: true,
