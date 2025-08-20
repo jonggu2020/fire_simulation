@@ -70,4 +70,38 @@ router.get('/', async (req, res) => {
     }
 });
 
+/**
+ * @route   DELETE /api/history/:historyId
+ * @desc    특정 시뮬레이션 내역을 삭제합니다.
+ * @access  Private
+ */
+router.delete('/:historyId', async (req, res) => {
+    const userId = req.user.uid;
+    const { historyId } = req.params;
+
+    if (!historyId) {
+        return res.status(400).json({ error: '삭제할 내역의 ID가 필요합니다.' });
+    }
+
+    try {
+        const docRef = firestoreDb.collection('users').doc(userId).collection('history').doc(historyId);
+        
+        // 문서 존재 여부 확인 (선택사항이지만, 더 정확한 피드백을 줄 수 있음)
+        const doc = await docRef.get();
+        if (!doc.exists) {
+            return res.status(404).json({ error: '삭제할 내역을 찾을 수 없습니다.' });
+        }
+
+        await docRef.delete();
+
+        res.status(200).json({ message: '시뮬레이션 내역이 성공적으로 삭제되었습니다.' });
+
+    } catch (error) {
+        console.error('Firestore 삭제 오류:', error);
+        res.status(500).json({ error: '서버 오류가 발생했습니다.' });
+    }
+});
+
+
+
 module.exports = router;
