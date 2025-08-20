@@ -9,6 +9,8 @@ const fs = require('fs');
 const csv = require('csv-parser');
 const path = require('path');
 
+const pool = require('../config/db'); // MySQL pool
+
 const KOREA_GRID_TABLE = 'imported_fire_data_auto';
 const PREDICTION_SERVER_URL = 'http://127.0.0.1:5000';
 const simulationCache = new Map();
@@ -28,15 +30,12 @@ const MINIMUM_ROS_TO_SPREAD = 0.05;
 
 let historicalFireStarts = [];
 
+// loadHistoricalFireStarts 함수 (CSV 버전)
 async function loadHistoricalFireStarts() {
-    // 함수 시작 부분은 동일
     if (historicalFireStarts.length > 0) return;
-    
-    // ✅ [수정] CSV 파일 경로가 'training_dataset_final.csv'로 되어있으므로,
-    // 이전 단계에서 수정한 파일과 동일한 파일을 가리키는지 확인이 필요합니다.
-    // 만약 파일 이름이 다르다면, 실제 사용하는 파일 이름으로 경로를 수정해야 합니다.
+
     const csvFilePath = path.join(__dirname, '..', 'data', 'training_dataset_final.csv');
-    console.log(`과거 산불 사례 데이터 로딩 시작: ${csvFilePath}`);
+    console.log(`CSV 파일에서 과거 산불 사례 데이터 로딩 시작: ${csvFilePath}`);
 
     const allRows = await new Promise((resolve, reject) => {
         const rows = [];
@@ -48,12 +47,9 @@ async function loadHistoricalFireStarts() {
     });
     console.log(`CSV 파일에서 총 ${allRows.length}개의 행을 읽었습니다.`);
 
-    // ✅ [수정] status가 'excluded'인 데이터를 필터링하는 로직 추가
     const filteredRows = allRows.filter(row => row.status !== 'excluded');
     console.log(` -> 제외된 데이터를 필터링 후 ${filteredRows.length}개의 행을 처리합니다.`);
 
-
-    // ✅ [수정] 'allRows' 대신 'filteredRows'를 사용하여 데이터를 처리합니다.
     filteredRows.forEach(row => {
         if (!row.event_id || row.event_id.trim() === '') return;
         for (const key in row) {
@@ -62,22 +58,31 @@ async function loadHistoricalFireStarts() {
             }
         }
     });
-    
+
     const SMALL_FIRE_THRESHOLD = 50;
     const MEDIUM_FIRE_THRESHOLD = 200;
 
-    // ✅ [수정] 'allRows' 대신 'filteredRows'를 사용하여 데이터를 처리합니다.
     filteredRows.forEach(startInfo => {
         const count = startInfo.cell_count || 1;
         if (count <= SMALL_FIRE_THRESHOLD) startInfo.fire_class = '소형';
         else if (count <= MEDIUM_FIRE_THRESHOLD) startInfo.fire_class = '중형';
         else startInfo.fire_class = '대형';
     });
-    
-    // ✅ [수정] 필터링된 데이터를 전역 변수에 할당합니다.
+
     historicalFireStarts = filteredRows;
     console.log(`✅ ${historicalFireStarts.length}개의 과거 산불 시작점 로딩 및 등급 분류 완료.`);
 }
+
+
+
+// loadHistoricalFireStarts 함수 아래에 추가해주세요.
+
+async function reloadHistoricalFireStarts() {
+    historicalFireStarts = []; // 메모리 캐시 비우기
+    await loadHistoricalFireStarts(); // DB에서 다시 로드
+    console.log('과거 산불 데이터를 DB에서 다시 로드하여 갱신했습니다.');
+}
+
 
 
 
@@ -103,11 +108,13 @@ async function getPredictionFromDNN(features) {
     }
 }
 
+
+//유사도 검사 점수 각각(습도/풍속/온도) 영향력
 function calculateSimilarity(current, past) {
     const weatherDist = Math.sqrt(
-        Math.pow((current.humidity - past.humidity) / 100, 2) +
-        Math.pow((current.windSpeed - past.wind_speed) / 15, 2) +
-        Math.pow((current.temperature - past.temperature) / 40, 2)
+        Math.pow((current.humidity - past.humidity) / 40, 2) +
+        Math.pow((current.windSpeed - past.wind_speed) / 10, 2) +
+        Math.pow((current.temperature - past.temperature) / 20, 2)
     );
     const weatherScore = Math.exp(-weatherDist);
     let envScore = 0;
@@ -380,7 +387,14 @@ const runFireSpreadPrediction = async (pool, ignition_id) => {
 
         const finalResult = {
             ...result,
-            scenarioName: scenario.name
+            scenarioName: scenario.name,
+            
+            stationInfo: {
+                obsid: nearestStation.obsid,
+                name: nearestStation.name,
+                latitude: nearestStation.latitude,
+                longitude: nearestStation.longitude
+            }
         };
 
         if (finalResult) {
@@ -424,6 +438,7 @@ const getGridWithFuelInfo = async (pool) => {
     }
 };
 
+// getHistoricalFires 함수 (CSV 소스 버전)
 const getHistoricalFires = async () => {
     if (historicalFireStarts.length === 0) {
         await loadHistoricalFireStarts();
@@ -432,96 +447,77 @@ const getHistoricalFires = async () => {
     const firesById = {};
     for (const row of historicalFireStarts) {
         if (!row.event_id) continue;
-        
-        // ✅ [오류 수정] 객체 속성에 접근할 때 대괄호 표기법을 사용합니다.
+
         if (!firesById[row.event_id]) {
             firesById[row.event_id] = {
                 id: row.event_id,
                 rows: [],
-                minTimestamp: Infinity,
+                timestamps: new Set(),
             };
         }
-        const timestamp = new Date(`${row.acq_date}T${String(row.acq_time).padStart(4, '0').slice(0, 2)}:${String(row.acq_time).padStart(4, '0').slice(2, 4)}:00Z`).getTime();
+
+        const formattedTime = String(row.acq_time).padStart(4, '0');
+        const timestamp = new Date(`${row.acq_date}T${formattedTime.slice(0, 2)}:${formattedTime.slice(2, 4)}:00Z`).getTime();
+
         row.timestamp = timestamp;
-        
-        // ✅ [오류 수정] 대괄호 표기법 사용
-        if (timestamp < firesById[row.event_id].minTimestamp) {
-            firesById[row.event_id].minTimestamp = timestamp;
-        }
+        firesById[row.event_id].timestamps.add(timestamp);
         firesById[row.event_id].rows.push(row);
     }
 
     const processedFires = [];
-    for (const eventId in firesById) {
-        // ✅ [오류 수정] 대괄호 표기법 사용
-        const fireEvent = firesById[eventId];
-        // ✅ [오류 수정] 배열의 첫 번째 요소에 접근하는 방식
-        const firstRow = fireEvent.rows[0];
+    const SYNTHETIC_SPREAD_RATE_SECS_PER_KM = 1800; 
 
+    for (const eventId in firesById) {
+        const fireEvent = firesById[eventId];
+        const firstRow = fireEvent.rows[0];
         const mappedName = firstRow.mapped_fire_name;
+
         if (mappedName && String(mappedName).trim() !== '') {
             const title = mappedName;
+            let features;
+            const uniqueTimestampsCount = fireEvent.timestamps.size;
 
-            let features = fireEvent.rows.map(row => {
-                const ignitionTime = (row.timestamp - fireEvent.minTimestamp) / 1000;
-                const burnoutTime = ignitionTime + 3600;
-                return {
-                    type: 'Feature',
-                    geometry: { type: 'Point', coordinates: [parseFloat(row.longitude), parseFloat(row.latitude)] },
-                    properties: {
-                        id: row.grid_id,
-                        ignitionTime: ignitionTime,
-                        burnoutTime: burnoutTime,
-                        isConnectingLine: false
-                    }
-                };
-            });
+            if (uniqueTimestampsCount <= 1 && fireEvent.rows.length > 1) {
+                console.log(`[가상 애니메이션] ${eventId}: 타임스탬프가 동일하여 거리에 기반한 애니메이션을 생성합니다.`);
+                const startPoint = turf.point([parseFloat(firstRow.longitude), parseFloat(firstRow.latitude)]);
+                features = fireEvent.rows.map(row => {
+                    const currentPoint = turf.point([parseFloat(row.longitude), parseFloat(row.latitude)]);
+                    const distanceKm = turf.distance(startPoint, currentPoint);
+                    const ignitionTime = distanceKm * SYNTHETIC_SPREAD_RATE_SECS_PER_KM;
+                    const burnoutTime = ignitionTime + 3600;
+                    return { type: 'Feature', geometry: { type: 'Point', coordinates: [parseFloat(row.longitude), parseFloat(row.latitude)] }, properties: { id: row.grid_id, ignitionTime, burnoutTime, isConnectingLine: false } };
+                });
+            } else {
+                const minTimestamp = Math.min(...fireEvent.timestamps);
+                features = fireEvent.rows.map(row => {
+                    const ignitionTime = (row.timestamp - minTimestamp) / 1000;
+                    const burnoutTime = ignitionTime + 3600;
+                    return { type: 'Feature', geometry: { type: 'Point', coordinates: [parseFloat(row.longitude), parseFloat(row.latitude)] }, properties: { id: row.grid_id, ignitionTime, burnoutTime, isConnectingLine: false } };
+                });
+            }
 
             features.sort((a, b) => a.properties.ignitionTime - b.properties.ignitionTime);
 
             if (features.length > 1) {
-                // ✅ [오류 수정] 배열의 첫 요소와 마지막 요소에 접근하는 방식
-                const startPoint = features[0].geometry.coordinates;
-                const endPoint = features[features.length - 1].geometry.coordinates;
-                
-                features.push({
-                    type: 'Feature',
-                    geometry: {
-                        type: 'LineString',
-                        coordinates: [startPoint, endPoint]
-                    },
-                    properties: {
-                        isConnectingLine: true
-                    }
-                });
+                const startPointCoords = features[0].geometry.coordinates;
+                const endPointCoords = features[features.length - 1].geometry.coordinates;
+                features.push({ type: 'Feature', geometry: { type: 'LineString', coordinates: [startPointCoords, endPointCoords] }, properties: { isConnectingLine: true } });
             }
 
-            const simulationEndTime = features
-                .filter(f => f.geometry.type === 'Point')
-                .reduce((max, f) => Math.max(max, f.properties.burnoutTime || 0), 0);
-            
+            const simulationEndTime = features.filter(f => f.geometry.type === 'Point').reduce((max, f) => Math.max(max, f.properties.burnoutTime || 0), 0);
             const scenarioName = firstRow.fire_class || '알수없음';
-
-            processedFires.push({
-                id: eventId,
-                title: title,
-                simulationData: {
-                    features: features,
-                    timeBoundaries: [],
-                    simulationEndTime: simulationEndTime,
-                    scenarioName: scenarioName
-                }
-            });
+            processedFires.push({ id: eventId, title: title, simulationData: { features, timeBoundaries: [], simulationEndTime, scenarioName } });
         }
     }
-
     return processedFires;
 };
+
 
 module.exports = { 
     runFireSpreadPrediction, 
     getGridData, 
     getGridWithFuelInfo, 
     loadHistoricalFireStarts,
-    getHistoricalFires 
+    getHistoricalFires,
+    //reloadHistoricalFireStarts // 이 부분을 추가합니다.
 };
