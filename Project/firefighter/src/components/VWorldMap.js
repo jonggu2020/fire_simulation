@@ -7,7 +7,8 @@ import XYZ from 'ol/source/XYZ';
 import VectorSource from 'ol/source/Vector';
 import GeoJSON from 'ol/format/GeoJSON';
 import TileWMS from 'ol/source/TileWMS';
-import { Style, Circle as CircleStyle, Fill, Stroke, RegularShape } from 'ol/style';
+// [수정] Icon을 기존 라인에 추가하고 중복된 import 라인은 제거합니다.
+import { Style, Circle as CircleStyle, Fill, Stroke, RegularShape, Icon } from 'ol/style';
 import 'ol/ol.css';
 import { transform } from 'ol/proj';
 import {
@@ -16,7 +17,9 @@ import {
     fireSpreadColors,
     mountainMarkerStyle,
     hikingTrailStyle,
-    fuelRatingColorMap
+    fuelRatingColorMap,
+    fireMarkerStyle, // fire.png 아이콘 스타일
+    fireMarkerStyleFilters // fire.png 필터
 } from './mapConfig';
 import Legend from './Legend';
 import { mountainStationsData } from './mountainStations';
@@ -28,6 +31,8 @@ import { getFavorites, addFavorite, removeFavorite } from '../service/apiService
 import FavoritesList from './FavoritesList';
 import HistoryList from './HistoryList';
 
+
+// WeatherDisplay 컴포넌트 (X 버튼 제거)
 const WeatherDisplay = ({ selectedStationInfo, onToggleFavorite, isLoggedIn, isFavorite }) => {
     const [weatherInfo, setWeatherInfo] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
@@ -56,44 +61,106 @@ const WeatherDisplay = ({ selectedStationInfo, onToggleFavorite, isLoggedIn, isF
     }, [selectedStationInfo]);
 
     if (!selectedStationInfo) return null;
-    const displayStyle = {
-        position: 'absolute', top: '20px', right: '20px', zIndex: 1001,
-        backgroundColor: 'rgba(255, 255, 255, 0.9)', padding: '15px',
-        borderRadius: '8px', boxShadow: '0 2px 10px rgba(0,0,0,0.2)',
-        width: '280px', fontSize: '13px'
+    
+    const containerStyle = {
+        position: 'absolute', top: '80px', right: '20px', zIndex: 1001,
+        backgroundColor: 'rgba(255, 255, 255, 0.9)',
+        borderRadius: '16px',
+        boxShadow: '0 2px 10px rgba(0,0,0,0.2)',
+        width: '280px',
+        overflow: 'hidden',
+        display: 'flex',
+        flexDirection: 'column'
+    };
+
+    const headerStyle = {
+        backgroundColor: '#54a0ff',
+        color: 'white',
+        padding: '8px 15px',
+        margin: 0,
+        fontWeight: 'normal',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center'
+    };
+
+    const contentStyle = {
+        padding: '15px',
+        fontSize: '13px'
     };
 
     return (
-        <div style={displayStyle}>
-            <h4 style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '0 0 10px 0', borderBottom: '1px solid #ccc', paddingBottom: '5px' }}>
-                {selectedStationInfo.name} 기상 정보
-                {isLoggedIn && (
-                    <button
-                        onClick={onToggleFavorite}
-                        style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '24px', color: '#f0c419' }}
-                        title={isFavorite ? "즐겨찾기에서 삭제" : "즐겨찾기에 추가"}
-                    >
-                        {isFavorite ? '★' : '☆'}
-                    </button>
-                )}
-            </h4>
-            {isLoading && <p>로딩 중...</p>}
-            {error && <p style={{ color: 'red' }}>{error}</p>}
-            {!isLoading && !error && !weatherInfo && <p>해당 관측소의 날씨 정보가 없습니다.</p>}
-            {weatherInfo && (
-                <div>
-                    <p><strong>관측 시간:</strong> {weatherInfo.tm || 'N/A'}</p>
-                    <p><strong>온도:</strong> {weatherInfo.tm2m !== undefined ? `${weatherInfo.tm2m}°C` : 'N/A'}</p>
-                    <p><strong>습도:</strong> {weatherInfo.hm2m !== undefined ? `${weatherInfo.hm2m}%` : 'N/A'}</p>
-                    <p><strong>풍향:</strong> {weatherInfo.wd2mstr || 'N/A'}</p>
-                    <p><strong>풍속:</strong> {weatherInfo.ws2m !== undefined ? `${weatherInfo.ws2m} m/s` : 'N/A'}</p>
+        <div style={containerStyle}>
+            <div style={headerStyle}>
+                <h4 style={{ margin: 0, flexGrow: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    {selectedStationInfo.name} 기상 정보
+                </h4>
+                <div style={{ display: 'flex', alignItems: 'center' }}>
+                    {isLoggedIn && (
+                        <button
+                            onClick={onToggleFavorite}
+                            style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '24px', color: '#f0c419', verticalAlign: 'middle', padding: 0 }}
+                            title={isFavorite ? "즐겨찾기에서 삭제" : "즐겨찾기에 추가"}
+                        >
+                            {isFavorite ? '★' : '☆'}
+                        </button>
+                    )}
                 </div>
-            )}
+            </div>
+            <div style={contentStyle}>
+                {isLoading && <p>로딩 중...</p>}
+                {error && <p style={{ color: 'red' }}>{error}</p>}
+                {!isLoading && !error && !weatherInfo && <p>해당 관측소의 날씨 정보가 없습니다.</p>}
+                {weatherInfo && (
+                    <div>
+                        <p><strong>관측 시간:</strong> {weatherInfo.tm || 'N/A'}</p>
+                        <p><strong>온도:</strong> {weatherInfo.tm2m !== undefined ? `${weatherInfo.tm2m}°C` : 'N/A'}</p>
+                        <p><strong>습도:</strong> {weatherInfo.hm2m !== undefined ? `${weatherInfo.hm2m}%` : 'N/A'}</p>
+                        <p><strong>풍향:</strong> {weatherInfo.wd2mstr || 'N/A'}</p>
+                        <p><strong>풍속:</strong> {weatherInfo.ws2m !== undefined ? `${weatherInfo.ws2m} m/s` : 'N/A'}</p>
+                    </div>
+                )}
+            </div>
         </div>
     );
 };
 
 const VWorldMap = () => {
+
+    //저장된 시뮬레이션 내역 삭제제
+    const handleDeleteHistory = async (historyId) => {
+        if (!user) {
+            alert("로그인이 필요합니다.");
+            return;
+        }
+        if (!window.confirm("선택한 내역을 정말 삭제하시겠습니까?")) {
+            return;
+        }
+
+        try {
+            const idToken = await user.getIdToken();
+            
+            // 1. 백엔드에 삭제 요청
+            // (실제로는 apiService 같은 곳에 함수를 만들어 호출하는 것이 좋습니다.)
+            await fetch(`/api/history/${historyId}`, {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': `Bearer ${idToken}`
+                }
+            });
+
+            // 2. 프론트엔드 상태에서 해당 아이템 제거
+            setHistory(prevHistory => prevHistory.filter(item => item.id !== historyId));
+
+            alert("내역이 삭제되었습니다.");
+
+        } catch (error) {
+            console.error("내역 삭제 중 오류 발생:", error);
+            alert(`오류가 발생하여 내역을 삭제하지 못했습니다: ${error.message}`);
+        }
+    };
+
+
     const [user] = useAuthState(auth);
     const [favorites, setFavorites] = useState([]);
     const [history, setHistory] = useState([]);
@@ -150,6 +217,12 @@ const VWorldMap = () => {
     const [currentBoundaryFeature, setCurrentBoundaryFeature] = useState(null);
     const [activeTimeBoundaries, setActiveTimeBoundaries] = useState(null);
 
+    // isSimulating 상태를 ref로 관리하여 click 핸들러에서 최신 값을 참조하도록 함
+    const isSimulatingRef = useRef(isSimulating);
+    useEffect(() => {
+        isSimulatingRef.current = isSimulating;
+    }, [isSimulating]);
+
 
     useEffect(() => {
         simulationTimeRef.current = simulationTime;
@@ -168,21 +241,19 @@ const VWorldMap = () => {
     }, []);
 
     const liveMarkerStyleFunction = useCallback((feature) => {
-        const color = feature.get('color') || 'gray';
-        const colorMap = {
-            'red': 'rgba(220, 53, 69, 0.8)',
-            'green': 'rgba(25, 135, 84, 0.8)',
-            'gray': 'rgba(108, 117, 125, 0.8)'
-        };
+        // fire_markers.json에서 'status' 속성을 가져옵니다 (예: '발생', '진화완료' 등).
+        const status = feature.get('status') || '발생'; 
+
+        // 기본 아이콘 스타일을 복제하여 사용합니다.
+        const iconOptions = { ...fireMarkerStyle };
+
+        // '진화완료' 또는 '산불종료' 상태일 경우, 정의된 색상 필터를 적용합니다.
+        if (fireMarkerStyleFilters[status]) {
+            iconOptions.color = fireMarkerStyleFilters[status];
+        }
 
         return new Style({
-            image: new RegularShape({
-                fill: new Fill({ color: colorMap[color] }),
-                stroke: new Stroke({ color: 'white', width: 1.5 }),
-                points: 4,
-                radius: 20,
-                angle: Math.PI / 4
-            })
+            image: new Icon(iconOptions)
         });
     }, []);
 
@@ -235,6 +306,7 @@ const VWorldMap = () => {
         return () => cancelAnimationFrame(animationFrameId.current);
     }, [isPlaying, maxSimTime]);
 
+    // 지도 초기화 및 이벤트 핸들러 설정 (최초 1회만 실행)
     useEffect(() => {
         if (!mapContainerRef.current || olMapRef.current) return;
         
@@ -255,8 +327,17 @@ const VWorldMap = () => {
                     })
                 })
             ],
-            view: new View({ center: [127.5, 36.5], zoom: 9, projection: 'EPSG:4326' }),
+            view: new View({
+                center: [127.5, 36.5],
+                zoom: 9,
+                projection: 'EPSG:4326',
+                minZoom: 7, // 줌 아웃 레벨을 7로 제한합니다.
+                 // [추가] 지도가 표시될 영역을 [서쪽, 남쪽, 동쪽, 북쪽] 경위도 좌표로 제한합니다.
+                extent: [120, 32, 135, 42] 
+            }),
         });
+
+
         olMapRef.current = map;
 
         const lSource = new VectorSource();
@@ -361,17 +442,28 @@ const VWorldMap = () => {
         layerRefs.current = currentLayerObjects;
 
         map.on('click', async (event) => {
-            if (isSimulating) return;
+            if (isSimulatingRef.current) return;
             
             const stationLayer = layerRefs.current['산악기상관측소 마커'];
             let stationClicked = false;
             if (stationLayer && stationLayer.getVisible()) {
+                let clickedStationInfo = null;
                 map.forEachFeatureAtPixel(event.pixel, (feature, layer) => {
                     if (layer === stationLayer) {
-                        setSelectedStation(feature.getProperties());
-                        stationClicked = true;
+                        clickedStationInfo = feature.getProperties();
+                        return true;
                     }
                 }, { hitTolerance: 5 });
+
+                if (clickedStationInfo) {
+                    stationClicked = true;
+                    setSelectedStation(prevStation => {
+                        if (prevStation && prevStation.obsid === clickedStationInfo.obsid) {
+                            return null;
+                        }
+                        return clickedStationInfo;
+                    });
+                }
             }
             if (stationClicked) return;
 
@@ -388,7 +480,7 @@ const VWorldMap = () => {
         });
 
         return () => { if (olMapRef.current) { olMapRef.current.dispose(); olMapRef.current = null; }};
-    }, []);
+    }, []); // 의존성 배열을 비워서 최초 1회만 실행되도록 수정
 
     useEffect(() => {
         Object.entries(layerVisibility).forEach(([name, isVisible]) => {
@@ -517,6 +609,11 @@ const VWorldMap = () => {
         setSimulationScenario(data.scenarioName || '정보 없음');
         setActiveTimeBoundaries(data.timeBoundaries || null);
 
+        // 해당 정보를 selectedStation 상태로 설정하여 날씨 정보창을 띄웁니다.
+        if (data.stationInfo) {
+            setSelectedStation(data.stationInfo);
+        }
+
         if (Array.isArray(data.features)) {
             const geoJsonInput = { type: 'FeatureCollection', features: data.features };
             const mapProjection = olMapRef.current.getView().getProjection();
@@ -549,9 +646,15 @@ const VWorldMap = () => {
         setSimulationError(null);
         setIsSimulating(false);
         setActiveTimeBoundaries(null);
-        if (layerRefs.current['전국 격자 데이터']) { 
-            layerRefs.current['전국 격자 데이터'].setVisible(true); 
+        
+        // 시뮬레이션 리셋 시, 사용자가 설정한 '전국 격자 데이터'의 가시성을 유지합니다.
+        // 강제로 true로 바꾸지 않습니다.
+        if (layerVisibility['전국 격자 데이터']) {
+             if (layerRefs.current['전국 격자 데이터']) { 
+                layerRefs.current['전국 격자 데이터'].setVisible(true); 
+            }
         }
+       
         setSelectedStation(null);
     };
     
@@ -588,7 +691,7 @@ const VWorldMap = () => {
             console.error("내역 저장 중 오류 발생:", error);
             alert(`오류가 발생하여 저장하지 못했습니다: ${error.message}`);
         }
-    }, [user]);
+    }, [user, history]); // history를 의존성 배열에 추가
 
     const handleLoadHistory = (historyItem) => {
         if (historyItem && historyItem.simulationData) {
@@ -629,38 +732,53 @@ const VWorldMap = () => {
         }
 
         const fetchAndDrawMarkers = async () => {
-        try {
-            const response = await fetch(`/data/fire_markers.json?t=${Date.now()}`);
-            if (!response.ok) {
-            console.error('실시간 마커 데이터 로드 실패:', response.status);
-            liveMarkerSourceRef.current.clear();
-            return;
-            }
-            const markers = await response.json();
+            // [추가] color 값을 status 값으로 변환해주는 '번역기' 객체
+            const colorToStatusMap = {
+                red: '발생',
+                gray: '진화완료',
+                green: '산불종료'
+            };
 
-            if (liveMarkerSourceRef.current) {
-                liveMarkerSourceRef.current.clear();
-                if (markers && markers.length > 0) {
-                    const newFeatures = markers.map(marker => {
-                        const transformedCoords = transform([marker.lon, marker.lat], 'EPSG:4326', 'EPSG:4326');
-                        
-                        return new Feature({
-                            geometry: new Point(transformedCoords),
-                            color: marker.color
-                        });
-                    });
-                    liveMarkerSourceRef.current.addFeatures(newFeatures);
+            try {
+                const response = await fetch(`/data/fire_markers.json?t=${Date.now()}`);
+                if (!response.ok) {
+                    console.error('실시간 마커 데이터 로드 실패:', response.status);
+                    liveMarkerSourceRef.current.clear();
+                    return;
                 }
-            }
-        } catch (error) {
-            console.error('실시간 마커 데이터 처리 중 오류:', error);
+                const markers = await response.json();
+
+                if (liveMarkerSourceRef.current) {
+                    liveMarkerSourceRef.current.clear();
+                    if (markers && markers.length > 0) {
+                        const newFeatures = markers.map(marker => {
+                            const transformedCoords = transform([marker.lon, marker.lat], 'EPSG:4326', 'EPSG:4326');
+                            
+                            // [수정] marker.color를 이용해 status를 지정합니다.
+                            const status = colorToStatusMap[marker.color] || '발생'; // color가 없거나 맵핑되지 않으면 '발생'으로 처리
+
+                            return new Feature({
+                                geometry: new Point(transformedCoords),
+                                status: status // 변환된 status 값을 Feature에 저장
+                            });
+                        });
+                        liveMarkerSourceRef.current.addFeatures(newFeatures);
+                    }
+                }
+            } catch (error) {
+                console.error('실시간 마커 데이터 처리 중 오류:', error);
             }
         };
 
         fetchAndDrawMarkers();
         const interval = setInterval(fetchAndDrawMarkers, 60000);
         return () => clearInterval(interval);
-    }, []);
+    }, []); // liveMarkerStyleFunction을 의존성 배열에서 제거하여 불필요한 재실행 방지
+
+
+
+
+
 
     const handleFavoriteSelect = useCallback((favorite) => {
         if (!olMapRef.current || !favorite.lat || !favorite.lon) return;
@@ -714,22 +832,6 @@ const VWorldMap = () => {
             alert(error.response?.data?.message || '요청 처리 중 오류가 발생했습니다.');
         }
     }, [user, selectedStation, favorites]);
-
-    const handleLogout = async () => {
-        try {
-            await auth.signOut();
-            setFavorites([]);
-            setSelectedStation(null);
-            alert('로그아웃 되었습니다.');
-        } catch (error) {
-            console.error("로그아웃 오류:", error);
-            alert('로그아웃 중 오류가 발생했습니다.');
-        }
-    };
-    
-    const handleLogin = () => {
-        window.location.href = "/login";
-    };
     
     useEffect(() => {
         if (user) {
@@ -756,32 +858,40 @@ const VWorldMap = () => {
     };
 
 
+    const baseButtonStyle = {
+        cursor: 'pointer',
+        padding: '5px 15px', // 높이를 줄이기 위해 패딩 값 수정
+        border: '1px solid #d04a31', // 활성 버튼 테두리 색상
+        borderRadius: '4px',
+        backgroundColor: '#EB5C43', // 활성 버튼 배경색 변경
+        color: 'white', // 글자색을 흰색으로 변경하여 가독성 확보
+        fontWeight: 'bold'
+    };
+
+    const disabledButtonStyle = {
+        ...baseButtonStyle,
+        backgroundColor: '#F29E8F', // 비활성 버튼 배경색
+        opacity: 0.7,
+        cursor: 'not-allowed',
+        border: '1px solid #e08e7f' // 비활성 버튼 테두리 색상
+    };
+
+
     return (
         <div style={{ position: 'relative', width: '100%', height: '100vh' }}>
             <div ref={mapContainerRef} style={{ width: '100%', height: '100%' }}></div>
-
+    
             <FavoritesList favorites={favorites} onFavoriteClick={handleFavoriteSelect} isLoggedIn={!!user} />
-
+    
             <HistoryList 
                 history={history}
                 isLoggedIn={!!user} 
                 onHistoryClick={handleLoadHistory}
+                onDeleteHistory={handleDeleteHistory}
             />
-
-            <div style={{ position: 'absolute', top: '20px', right: '20px', zIndex: 1002 }}>
-                {!user && (
-                    <div style={{ backgroundColor: 'rgba(255, 255, 255, 0.9)', padding: '10px 15px', borderRadius: '8px', boxShadow: '0 2px 10px rgba(0,0,0,0.2)', 
-                        marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <button onClick={handleLogin} style={{ cursor: 'pointer' }}>로그인</button>
-                    </div>
-                )}
-                {user && (
-                    <div style={{ backgroundColor: 'rgba(255, 255, 255, 0.9)', padding: '10px 15px', borderRadius: '8px', boxShadow: '0 2px 10px rgba(0,0,0,0.2)', 
-                        marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <span style={{ fontWeight: 'bold' }}>{user.displayName}님 환영합니다.</span>
-                        <button onClick={handleLogout} style={{ cursor: 'pointer' }}>로그아웃</button>
-                    </div>
-                )}
+    
+            {/* [수정] 로그인 UI가 있던 div를 제거하고, WeatherDisplay만 표시하도록 wrapper div를 새로 구성합니다. */}
+            <div style={{ position: 'absolute', top: '20px', right: '20px', zIndex: 1001 }}>
                 {selectedStation && (
                     <WeatherDisplay
                         selectedStationInfo={selectedStation}
@@ -794,7 +904,7 @@ const VWorldMap = () => {
             
             <div style={{
                 position: 'absolute', bottom: '20px', left: '50%', transform: 'translateX(-50%)',
-                backgroundColor: 'rgba(255, 255, 255, 0.9)', padding: '15px', borderRadius: '8px',
+                backgroundColor: 'rgba(255, 255, 255, 0.75)', padding: '15px', borderRadius: '8px',
                 boxShadow: '0 2px 10px rgba(0,0,0,0.2)', zIndex: 1000, width: '80%', maxWidth: '900px'
             }}>
                 <div style={{display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '10px'}}>
@@ -805,7 +915,7 @@ const VWorldMap = () => {
                         시간: {formatTime(simulationTime)} / {formatTime(maxSimTime)}
                     </b>
                 </div>
-
+    
                 <div style={{display: 'flex', alignItems: 'center', gap: '15px'}}>
                     <input 
                         type="range" 
@@ -815,19 +925,37 @@ const VWorldMap = () => {
                         value={simulationTime} 
                         onChange={(e) => handleSliderChange(Number(e.target.value))} 
                         style={{ flexGrow: 1, cursor: 'pointer' }} 
-                        disabled={!simulationDataRef.current}
+                        disabled={!simulationScenario}
                     />
                 </div>
-
+    
                 <div style={{display: 'flex', justifyContent: 'center', gap: '10px', marginTop: '10px'}}>
-                    <button onClick={handleTogglePlay} disabled={!simulationDataRef.current}>
+                    <button 
+                        onClick={handleTogglePlay} 
+                        disabled={!simulationScenario}
+                        style={!simulationScenario ? disabledButtonStyle : baseButtonStyle}
+                    >
                         {isPlaying ? '일시정지' : '재생'}
                     </button>
-                    <button onClick={() => handleSliderChange(maxSimTime)} disabled={!simulationDataRef.current}>
+                    <button 
+                        onClick={() => handleSliderChange(maxSimTime)} 
+                        disabled={!simulationScenario}
+                        style={!simulationScenario ? disabledButtonStyle : baseButtonStyle}
+                    >
                         최종 결과
                     </button>
-                    <button onClick={resetSimulation}>리셋</button>
-                    <button onClick={handleSaveSimulation} disabled={!user || !simulationDataRef.current}>
+                    <button 
+                        onClick={resetSimulation}
+                        disabled={!simulationScenario}
+                        style={!simulationScenario ? disabledButtonStyle : baseButtonStyle}
+                    >
+                        리셋
+                    </button>
+                    <button 
+                        onClick={handleSaveSimulation} 
+                        disabled={!user || !simulationScenario}
+                        style={!user || !simulationScenario ? disabledButtonStyle : baseButtonStyle}
+                    >
                         내역 저장
                     </button>
                 </div>
@@ -846,6 +974,7 @@ const VWorldMap = () => {
             />
         </div>
     );
-};
+
+}
 
 export default VWorldMap;
