@@ -1,89 +1,136 @@
-// src/App.js
+/**
+ * src/App.js
+ * 
+ * 애플리케이션의 메인 컴포넌트입니다.
+ * React Router를 사용하여 페이지 간의 라우팅을 관리합니다.
+ */
 
 import React from 'react';
 import { BrowserRouter, Routes, Route, useNavigate } from 'react-router-dom';
-import './App.css'; // App 컴포넌트의 스타일 파일 (기본 생성됨)
-import logo from './assets/firefighter_logo.png';
+import './App.css'; // 전역 CSS 스타일
+import logo from './assets/firefighter_logo.png'; // 로고 이미지
 
-// --- 수정 전 ---
-// import VWorldMap from './VWorldMap'; // 우리가 만든 VWorldMap 컴포넌트를 불러옵니다.
-
-// --- 수정 후 ---
-// VWorldMap 컴포넌트의 새 위치를 정확히 지정합니다.
+// 페이지 컴포넌트 import
 import VWorldMap from './components/VWorldMap';
 import Home from './components/Home';
+import Login from './components/Login';
+import SignUp from './components/SignUp';
 
+
+// ✅ [추가] 새로 만든 HistoricalMap 컴포넌트를 가져옵니다.
+import HistoricalMap from './components/HistoricalMap';
+
+/**
+ * App 컴포넌트
+ * 
+ * @returns {JSX.Element}
+ * - BrowserRouter: HTML5 히스토리 API를 사용하여 UI와 URL을 동기화합니다.
+ * - Routes: Route 컴포넌트들을 감싸고, 현재 URL에 맞는 첫 번째 Route를 렌더링합니다.
+ * - Route: 특정 경로에 어떤 컴포넌트를 렌더링할지 정의합니다.
+ */
 function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* 1) 홈 페이지 라우트 */}
+        {/* 홈 페이지 라우트 */}
         <Route path="/" element={<HomePage />} />
 
-        {/* 2) 지도 페이지 라우트 */}
+        {/* 지도 페이지 라우트 */}
         <Route path="/map" element={<MapPage />} />
+
+        {/* 로그인 페이지 라우트 */}
+        <Route path="/login" element={<Login />} />
+        
+        {/* 회원가입 페이지 라우트 */}
+        <Route path="/signup" element={<SignUp />} />  
+
+        {/* ✅ [추가] '/historical' 경로에 HistoricalMap 컴포넌트를 연결합니다. */}
+        <Route path="/historical" element={<HistoricalMap />} />
       </Routes>
     </BrowserRouter>
   );
 }
 
-// 1. HomePage: 로고 좌측, 텍스트 중앙
+/**
+ * HomePage 컴포넌트
+ * 애플리케이션의 메인 페이지입니다.
+ * 헤더, Home 컴포넌트, 로그인 버튼이 있습니다.
+ */
 const HomePage = () => {
-  // const navigate = useNavigate();
+  const navigate = useNavigate(); // 페이지 이동을 위한 navigate 함수??
+
+  // 로그인 버튼 클릭 시 /login 경로로 이동하는 함수?
+  const handleLoginClick = () => {
+    navigate('/login');
+  };
+
   return (
     <div className="App" style={{display: 'flex', flexDirection: 'column', height: '105vh', backgroundColor: '#F5F5F5',}}>
-      {/* Home 전용 헤더 */}
       <header
         style={{
           display: 'flex',
           height: '80px',
           alignItems: 'center',
-          justifyContent: 'center',  // 텍스트 가운데
-          padding: '10px 20px',
+          justifyContent: 'space-between',
+          padding: '10px 30px',
           backgroundColor: '#f0f0f0',
           boxShadow: '0 1px 4px rgba(0,0,0,0.1)',
           borderBottom: '2px solid #9c9c9c',
         }}
       >
-        <img
-          src={logo}
-          alt="FireFighter Logo"
-          style={{ height: '105px', width: '115px', marginRight: '12px', position: 'absolute', left: '30px' }}
-        />
-        <h1 style={{ margin: 0, fontSize: '2.5rem', fontWeight: 'bold' }}>
-          <span style={{ color: '#B33E2C' }}>F</span>ireFighter
-        </h1>
+        <div style={{ display: 'flex', alignItems: 'center' }}>
+          <img
+            src={logo}
+            alt="FireFighter Logo"
+            style={{ height: '105px', width: '115px', marginRight: '12px' }}
+          />
+          <h1 style={{ margin: 0, fontSize: '2.5rem', fontWeight: 'bold' }}>
+            <span style={{ color: '#B33E2C' }}>F</span>ireFighter
+          </h1>
+        </div>
+        <button 
+          onClick={handleLoginClick}
+          style={{
+            padding: '10px 20px',
+            fontSize: '1rem',
+            color: 'white',
+            backgroundColor: '#B33E2C',
+            border: 'none',
+            borderRadius: '5px',
+            cursor: 'pointer'
+          }}
+        >
+          로그인
+        </button>
       </header>
-
-      {/* Home 컴포넌트 */}
       <div
         style={{
           flexGrow: 1,
-          paddingTop: '80px',    // ← 여기!
+          paddingTop: '80px',
           overflow: 'auto'
         }}
       >
         <Home />
       </div>
-
-      {/* Home에서 “시작하기” 버튼 누르면 /map 으로 이동 */}
-      {/* Home 내부에 이미 useNavigate 로 버튼 처리되어 있다면 여기선 생략해도 됩니다 */}
     </div>
   );
 };
 
-// 2. MapPage: 로고 좌측, 텍스트 좌측
+/**
+ * MapPage 컴포넌트
+ * VWorldMap 지도를 보여주는 페이지입니다.
+ */
 const MapPage = () => (
   <div className="App">
-    {/* 페이지 제목 헤더 (선택 사항) */}
+
     <header
       style={{
         backgroundColor: '#f0f0f0',
-        height: '50px',            // 높이 증가
-        padding: '5px 10px',         // 상하좌우 패딩
-        display: 'flex',           // 수직 가운데 정렬
-        alignItems: 'flex-end',   // 헤더 하단 정렬
-        justifyContent: 'flex-start',  // 텍스트 좌측 정렬
+        height: '50px',
+        padding: '5px 10px',
+        display: 'flex',
+        alignItems: 'flex-end',
+        justifyContent: 'flex-start',
         color: '#333',
         boxShadow: '0 1px 4px rgba(0,0,0,0.1)',
         borderBottom: '2px solid #9c9c9c',
@@ -94,19 +141,13 @@ const MapPage = () => (
         alt="FireFighter Logo"
         style={{ height: '60px', marginRight: '6px' }}
       />
-
-      {/* ④ 텍스트: 첫 글자만 빨강 */}
       <h1 style={{ margin: 0, fontSize: '1.3rem', fontFamily: 'sans-serif', fontWeight: 'bold' }}>
         <span style={{ color: '#B33E2C' }}>F</span>ireFighter
       </h1>
     </header>
 
-    {/* VWorldMap 컴포넌트를 렌더링합니다. */}
-    {/* VWorldMap 컴포넌트 내부에서 지도가 생성되어 해당 div 안에 표시됩니다. */}
-    {/* VWorldMap 자체에 flexbox 스타일을 주어 헤더/푸터 외 남은 공간을 사용하게 했습니다. */}
-      <VWorldMap />
-
+    <VWorldMap />
   </div>
 );
 
-export default App; // App 컴포넌트를 내보냅니다.
+export default App;

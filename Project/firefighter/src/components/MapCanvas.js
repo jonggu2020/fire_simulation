@@ -1,28 +1,56 @@
 // src/components/VWorldMap/MapCanvas.js
-// (아직 로직이 구현되지 않은 초기 상태)
 
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, forwardRef } from 'react';
 import 'ol/ol.css';
-// 필요한 OpenLayers 모듈 import 예정
+import { Map, View } from 'ol';
+import TileLayer from 'ol/layer/Tile';
+import XYZ from 'ol/source/XYZ';
+import { VWORLD_XYZ_URL } from './mapConfig'; // VWorld URL 설정이 필요합니다.
 
-const MapCanvas = (/* 필요한 props 수신 예정 */) => {
-    const mapRef = useRef(null);
+const MapCanvas = forwardRef((props, olMapRef) => {
+    // 이 ref는 div 엘리먼트 자체에 연결됩니다.
+    const mapContainerRef = useRef(null);
 
-    // 맵 초기화 및 관리 로직은 VWorldMap.js 에서 이동 예정
     useEffect(() => {
-        // 맵 생성 및 관리 로직...
-        console.log("MapCanvas mounted, map initialization logic will go here.");
+        // 이미 지도 객체가 생성되었거나, 렌더링될 div가 없으면 실행하지 않습니다.
+        if (!mapContainerRef.current || olMapRef.current) {
+            return;
+        }
 
+        // OpenLayers Map 객체 생성
+        const map = new Map({
+            target: mapContainerRef.current,
+            layers: [
+                new TileLayer({
+                    source: new XYZ({
+                        url: VWORLD_XYZ_URL,
+                        crossOrigin: 'anonymous', // 이미지 저장을 위한 crossOrigin 설정
+                    }),
+                }),
+            ],
+            view: new View({
+                center: [127.5, 36.5],
+                zoom: 9,
+                projection: 'EPSG:4326',
+            }),
+            controls: [], // 기본 컨트롤러(줌 버튼 등)는 숨김 처리
+        });
+
+        // 부모로부터 받은 ref(olMapRef)에 생성된 map 객체를 할당합니다.
+        olMapRef.current = map;
+
+        // 컴포넌트가 사라질 때 맵 리소스를 정리하는 클린업 함수입니다.
         return () => {
-            // 맵 해제 로직...
-            console.log("MapCanvas unmounted, map disposal logic will go here.");
+            if (olMapRef.current) {
+                olMapRef.current.dispose();
+                olMapRef.current = null;
+            }
         };
-    }, []);
+    }, [olMapRef]); // olMapRef가 바뀔 때를 감지하여 useEffect를 실행합니다.
 
     return (
-        // 맵이 렌더링될 div 요소. 스타일은 부모로부터 받거나 여기서 지정.
-        <div ref={mapRef} style={{ width: '100%', height: 'calc(100vh - 50px)' }}></div>
+        <div ref={mapContainerRef} style={{ width: '100%', height: '100%' }}></div>
     );
-};
+});
 
 export default MapCanvas;
