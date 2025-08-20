@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
-const { firestoreDb, FieldValue } = require('../firebaseAdmin');
+const { firestoreDb } = require('../firebaseAdmin'); // [수정] firestoreDb만 가져옵니다.
+const { FieldValue } = require('firebase-admin/firestore'); // [수정] FieldValue를 firebase-admin/firestore에서 직접 가져옵니다.
 
 // 이 파일은 보이지 않는 특수 문자나 인코딩 오류를 제거하기 위해 완전히 새로 작성되었습니다.
 
@@ -67,8 +68,8 @@ router.delete('/:stationId', async (req, res) => {
 
         if (doc.exists) {
             const currentFavorites = doc.data().favorites || [];
-            const stationIdAsNumber = parseInt(stationId, 10);
-            const updatedFavorites = currentFavorites.filter(favorite => favorite.stationId !== stationIdAsNumber);
+            // [수정] stationId 타입을 비교할 때 일관성을 위해 문자열로 비교합니다.
+            const updatedFavorites = currentFavorites.filter(favorite => String(favorite.stationId) !== stationId);
 
             if (currentFavorites.length === updatedFavorites.length) {
                 return res.status(404).json({ message: '삭제할 항목을 즐겨찾기에서 찾을 수 없습니다.' });
