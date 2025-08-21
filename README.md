@@ -129,9 +129,16 @@
     npm install
     ```
 
+<<<<<<< HEAD
 3.  **환경변수 파일(`.env`) 생성**
     1. backend 폴더의 .env.example 파일을 복사하여 .env 파일을 생성합니다.
     2. 생성된 .env 파일을 열어 본인의 환경에 맞게 모든 값을 채워넣습니다.
+=======
+3.  **Firebase 서비스 계정 키 설정**
+    - Firebase 콘솔의 **[프로젝트 설정] > [서비스 계정]** 탭에서 '새 비공개 키 생성'을 통해 `.json` 파일을 다운로드합니다.
+    - 다운로드한 파일의 이름을 `serviceAccountKey.json`으로 변경하고 `backend` 폴더 내에 위치시킵니다.
+    
+>>>>>>> 76e1d444f8994019f805fd784bed9fe31c80f8ed
 
 
 ## 💧 프론트엔드 설정
@@ -152,6 +159,7 @@ React 애플리케이션 실행을 위한 설정입니다.
     ```
 
 
+<<<<<<< HEAD
 3. **프론트엔드 .env.local 파일 설정**
     1. firefighter 폴더에 .env.local 파일을 새로 생성합니다.
     2. Firebase 콘솔에서 확인한 본인의 설정값으로 모두 채워넣습니다.
@@ -168,6 +176,20 @@ React 애플리케이션 실행을 위한 설정입니다.
     ```
     *서버가 `http://127.0.0.1:5000`에서 실행됩니다.*
 
+=======
+## ▶️ 실행 방법
+
+아래의 각 서버 및 스크립트는 **별개의 터미널에서 실행**해야 합니다.
+
+1.  **AI 예측 서버 실행**:
+    ```bash
+    cd backend/model
+    pip install -r requirements.txt # (requirements.txt가 필요할 경우)
+    python prediction_server_final_team.py
+    ```
+    *서버가 `http://127.0.0.1:5000`에서 실행됩니다.*
+
+>>>>>>> 76e1d444f8994019f805fd784bed9fe31c80f8ed
 2.  **백엔드 서버 실행**:
     ```bash
     cd backend
