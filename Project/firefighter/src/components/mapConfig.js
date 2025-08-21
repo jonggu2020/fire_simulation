@@ -4,7 +4,13 @@ import Fill from 'ol/style/Fill';
 import Circle from 'ol/style/Circle';
 import Icon from 'ol/style/Icon';
 import fireIcon from '../assets/fire.png'
-export const VWORLD_XYZ_URL = 'http://xdworld.vworld.kr:8080/2d/Base/201802/{z}/{x}/{y}.png?apiKey=B60B525E-129D-3B8B-880F-77C24CF86AE3';
+
+
+// VWorld API 키를 환경 변수에서 가져옵니다.
+const VWORLD_API_KEY = process.env.REACT_APP_VWORLD_API_KEY;
+
+// 환경 변수를 사용하여 VWorld XYZ 타일 URL을 동적으로 생성합니다.
+export const VWORLD_XYZ_URL = `http://xdworld.vworld.kr:8080/2d/Base/201802/{z}/{x}/{y}.png?apiKey=${VWORLD_API_KEY}`;
 
 // 2. 기본 아이콘 스타일 정의
 export const fireMarkerStyle = {

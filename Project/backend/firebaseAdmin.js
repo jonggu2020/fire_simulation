@@ -1,10 +1,17 @@
 // backend/firebaseAdmin.js
 
 const admin = require('firebase-admin');
+// .env 파일을 로드하기 위해 최상단에 추가
+require('dotenv').config();
 
 // --- 1. Firestore, Auth, Storage용 앱 초기화 ---
-// .env 파일에 FIRESTORE_SERVICE_ACCOUNT_KEY_PATH가 정의되어 있어야 합니다.
-const firestoreServiceAccount = require(process.env.FIRESTORE_SERVICE_ACCOUNT_KEY_PATH);
+
+// .env 파일에서 Firestore 서비스 계정 JSON "내용"을 직접 가져옵니다.
+const firestoreServiceAccountStr = process.env.FIRESTORE_SERVICE_ACCOUNT_JSON;
+if (!firestoreServiceAccountStr) {
+    throw new Error('FIRESTORE_SERVICE_ACCOUNT_JSON 환경 변수를 찾을 수 없습니다. .env 파일을 확인하세요.');
+}
+const firestoreServiceAccount = JSON.parse(firestoreServiceAccountStr);
 
 // 앱에 고유한 이름을 부여하여 다른 앱과 구별합니다.
 const firestoreApp = admin.initializeApp({
@@ -13,13 +20,23 @@ const firestoreApp = admin.initializeApp({
 
 
 // --- 2. Realtime Database용 앱 초기화 ---
-// .env 파일에 RTDB_SERVICE_ACCOUNT_KEY_PATH와 FIREBASE_DATABASE_URL이 정의되어 있어야 합니다.
-const rtdbServiceAccount = require(process.env.RTDB_SERVICE_ACCOUNT_KEY_PATH);
+
+// .env 파일에서 RTDB 서비스 계정 JSON "내용"과 DB URL을 직접 가져옵니다.
+const rtdbServiceAccountStr = process.env.RTDB_SERVICE_ACCOUNT_JSON;
+if (!rtdbServiceAccountStr) {
+    throw new Error('RTDB_SERVICE_ACCOUNT_JSON 환경 변수를 찾을 수 없습니다. .env 파일을 확인하세요.');
+}
+const rtdbServiceAccount = JSON.parse(rtdbServiceAccountStr);
+
+const databaseURL = process.env.FIREBASE_DATABASE_URL;
+if (!databaseURL) {
+    throw new Error('FIREBASE_DATABASE_URL 환경 변수를 찾을 수 없습니다. .env 파일을 확인하세요.');
+}
 
 // 앱에 고유한 이름을 부여하여 다른 앱과 구별합니다.
 const rtdbApp = admin.initializeApp({
   credential: admin.credential.cert(rtdbServiceAccount),
-  databaseURL: process.env.FIREBASE_DATABASE_URL 
+  databaseURL: databaseURL
 }, 'rtdbApp');
 
 
