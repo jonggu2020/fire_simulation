@@ -24,17 +24,6 @@
 -   **데이터 관리 기능 (BETA)**: 분석에 방해가 되는 노이즈 데이터를 관리자가 직접 제외하여 시스템의 학습 데이터 품질을 지속적으로 개선.
 -   **실시간 산불 위치 크롤링**: `selenium_fire_crawler.py`를 통해 산림청의 실시간 산불 정보를 크롤링하고, 이미지 분석을 통해 좌표를 추출하여 지도에 마커로 표시.
 
-## 🛠️ 기술 스택
-
-| 구분              | 기술                                                                                              |
-| ----------------- | ------------------------------------------------------------------------------------------------- |
-| **Frontend** | React, OpenLayers, Axios, `react-router-dom`                                                           |
-| **Backend** | Node.js, Express.js                                                                                     |
-| **Database** | MySQL, Firebase (Firestore, Realtime Database)                                                         |
-| **AI/Prediction** | Python, Flask, Pandas, Scikit-learn (RandomForest), Joblib                                        |
-| **Data Collection** | Python, Selenium, Pillow, `apscheduler`                                                         |
-| **Authentication**| Firebase Authentication                                                                           |
-
 
 ## 📁 프로젝트 구조
 
